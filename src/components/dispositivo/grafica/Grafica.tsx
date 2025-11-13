@@ -226,7 +226,7 @@ export function Grafica({ id }: GraficaProps) {
             newValue = newValue * 300; // Aplicar reducción del 15%
           }*/
           if (parameter === "formaldehyde") {
-            newValue = newValue * 0.85; // Aplicar reducción del 15%
+            newValue = newValue ; // Aplicar reducción del 15%
           }
 
           // Limitar a 3 decimales
@@ -249,9 +249,9 @@ export function Grafica({ id }: GraficaProps) {
           convertedMed = convertedMed * 300; // Aplicar reducción del 15%
         }*/
         if (parameter === "formaldehyde") {
-          convertedMin = convertedMin * 0.85; // Aplicar reducción del 15%
-          convertedMax = convertedMax * 0.85; // Aplicar reducción del 15%
-          convertedMed = convertedMed * 0.85; // Aplicar reducción del 15%
+          convertedMin = convertedMin ; // Aplicar reducción del 15%
+          convertedMax = convertedMax ; // Aplicar reducción del 15%
+          convertedMed = convertedMed ; // Aplicar reducción del 15%
         }
         // Si es formaldehído, reducir un 15% adicional
 

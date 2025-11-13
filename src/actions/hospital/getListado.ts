@@ -47,7 +47,7 @@ function transformData(rows: any[]) {
         ventilationIndicator: parseFloat(row.ventilation_indicator),
         co: (parseFloat(row.co)/1000),
         formaldehyde: parseFloat(
-          (((parseFloat(row.formaldehyde) / 1000) * 0.85).toFixed(3))
+          (((parseFloat(row.formaldehyde) / 1000)).toFixed(3))
         ),
         no2: (parseFloat(row.no2)/1000),
         o3: (parseFloat(row.o3)/1000),

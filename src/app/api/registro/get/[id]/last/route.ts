@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import  { executeQuery } from "@/lib/db";
+import { executeQuery } from "@/lib/db";
+import { getSession } from "@/actions/auth/getSession";
 
 // Función para parsear la fecha sin forzar zona horaria
 function parseUpdateTime(updateTime: string): number[] {
@@ -27,12 +28,16 @@ function parseUpdateTime(updateTime: string): number[] {
   ];
 }
 
-
 export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+    }
+
     // Esperar a que se resuelvan los parámetros
     const params = await context.params;
 
@@ -83,16 +88,16 @@ export async function GET(
         humidity: parseFloat(row.humidity),
         co2: parseFloat(row.co2),
         formaldehyde: parseFloat(
-          (((parseFloat(row.formaldehyde) / 1000) * 0.85).toFixed(3))
+          (parseFloat(row.formaldehyde) / 1000).toFixed(3)
         ),
-        vocs: (parseFloat(row.vocs)/1000),
+        vocs: parseFloat(row.vocs) / 1000,
         pm1: parseFloat(row.pm1),
         pm4: parseFloat(row.pm4),
         pm10: parseFloat(row.pm10),
         pm25: parseFloat(row.pm25),
-        co: (parseFloat(row.co)/1000),
-        o3: (parseFloat(row.o3)/1000),
-        no2: (parseFloat(row.no2)/1000),
+        co: parseFloat(row.co) / 1000,
+        o3: parseFloat(row.o3) / 1000,
+        no2: parseFloat(row.no2) / 1000,
         covid19: parseFloat(row.covid19),
         iaq: parseFloat(row.iaq),
         thermalIndicator: parseFloat(row.thermal_indicator),
@@ -102,11 +107,14 @@ export async function GET(
     ];
 
     return NextResponse.json(responseData, { status: 200 });
-
   } catch (error: any) {
     console.error("Error al obtener el registro:", error);
     return NextResponse.json(
-      { success: false, message: "Error al obtener el registro", error: error.message },
+      {
+        success: false,
+        message: "Error al obtener el registro",
+        error: error.message,
+      },
       { status: 500 }
     );
   }

@@ -34,6 +34,15 @@ export async function getPurificador(id: string) {
   return rows[0] as Purificador;
 }
 
+export async function getPurificadorBySala(id: string) {
+  const [rows]: any[] = await executeQuery(
+    `SELECT * FROM purificadores p WHERE p.sala = ?`,
+    [id]
+  );
+
+  return rows[0] as Purificador;
+}
+
 
 export async function getAccionesPurificador(id: string) {
   const [rows]: any[] = await executeQuery(

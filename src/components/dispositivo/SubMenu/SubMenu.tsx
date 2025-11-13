@@ -9,21 +9,30 @@ import { Grafica } from "../grafica/Grafica"
 import Informe from "../informe/Informe"
 import { Suspense, useState } from "react"
 import Indicadores from "../Indicadores/Indicadores"
+import Purificador from "../purificador/Purificador"
 
 interface SubmenuProps {
   id: string
+  exists: boolean
 }
 
-const items = [
-  { name: "Parámetros", path: "parametros" },
- { name: "Indicadores", path: "indicadores" },
-  { name: "Gráfica", path: "grafica" },
-  { name: "Informe", path: "informe" },
-]
 
-const Submenu: React.FC<SubmenuProps> = ({ id }) => {
+
+const Submenu: React.FC<SubmenuProps> = ({ id,exists }) => {
 
   const [tag, setTag] = useState("parametros")
+
+  const items = [
+    { name: "Parámetros", path: "parametros" },
+    { name: "Indicadores", path: "indicadores" },
+    { name: "Gráfica", path: "grafica" },
+    { name: "Informe", path: "informe" },
+  ]
+
+  if (exists) {
+    // Ejemplo: insertar en la posición 3 (antes de "Informe")
+    items.splice(3, 0, { name: "Purificador", path: "purificador" });
+  }
 
   const handleClick = (tag: string) => {
     setTag(tag)
@@ -39,6 +48,7 @@ const Submenu: React.FC<SubmenuProps> = ({ id }) => {
   else if (tag === "indicadores") ComponentToRender = Indicadores
   else if (tag === "grafica") ComponentToRender = Grafica
   else if (tag === "informe") ComponentToRender = Informe
+  else if (tag === "purificador") ComponentToRender = Purificador
   else ComponentToRender = DefaultComponent
 
   // Determinar si el componente actual es Grafica para aplicar estilos específicos

@@ -1,4 +1,5 @@
 import { getDispositivo } from "@/actions/dispositivo/getDispositivo";
+import { getPurificadorBySala } from "@/actions/purificadores/getPurificador";
 import Submenu from "@/components/dispositivo/SubMenu/SubMenu";
 import Loading from "@/components/loading/Loading";
 import { CircleArrowLeft } from "lucide-react";
@@ -12,8 +13,9 @@ import { Suspense } from "react";
 export default async function DispositivoPage({ params }: any) {
   const { id } = params;
   const disp = await getDispositivo(id);
+  const purificador = await getPurificadorBySala(id);
   // console.log(disp);
-
+  const exists = !!purificador; // convierte cualquier valor truthy/falsy en booleano
 
   return (
     <div className="flex flex-col gap-4 w-full">
@@ -29,8 +31,8 @@ export default async function DispositivoPage({ params }: any) {
         </div>
         {/* Pasa el parámetro id al componente Submenu */}
       </div>
-      <Suspense fallback={<Loading/>}>     
-      <Submenu id={id} />
+      <Suspense fallback={<Loading/>}>
+      <Submenu id={id} exists={exists} />
       </Suspense>
     </div>
   );

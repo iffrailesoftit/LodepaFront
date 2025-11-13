@@ -1,5 +1,5 @@
 
-import { InfoIcon } from "lucide-react" 
+import { InfoIcon } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface ProgressCircleProps {
