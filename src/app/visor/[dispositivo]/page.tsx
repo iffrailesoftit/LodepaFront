@@ -17,9 +17,12 @@ type Umbral = {
   max_warning: number;
 };
 
-async function parseJsonResponse<T>(response: Response): Promise<T> {
+async function parseJsonResponse<T>(response: Response, options?: { fallback?: T }): Promise<T> {
   const text = await response.text();
   if (!response.ok) {
+    if (response.status === 404 && options?.fallback !== undefined) {
+      return options.fallback;
+    }
     throw new Error(`Error ${response.status}: ${text.slice(0, 200)}`);
   }
   try {
@@ -58,7 +61,7 @@ export default function VisorDispositivo() {
     const loadUmbrales = async () => {
       try {
         const response = await fetch('/api/umbrales');
-        const data = await parseJsonResponse<Record<string, Umbral>>(response);
+        const data = await parseJsonResponse<Record<string, Umbral>>(response, { fallback: {} });
         setUmbrales(data);
       } catch (error) {
         console.error('Error al cargar umbrales:', error);
@@ -73,7 +76,7 @@ export default function VisorDispositivo() {
     if (!dispositivo) return;
     try {
       const res = await fetch(`/api/registro/get/${dispositivo}/last`);
-      const data = await parseJsonResponse<Registro[]>(res);
+      const data = await parseJsonResponse<Registro[]>(res, { fallback: [] });
       if (Array.isArray(data) && data.length > 0) {
         setRegistro(data[0]);
         alertaReproducida.current.clear(); // reset para nueva lectura
