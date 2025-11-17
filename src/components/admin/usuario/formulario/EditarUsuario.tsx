@@ -39,6 +39,7 @@ export default function EditarUsuario({ user, roles, hospitales, onClose }: Edit
     nombre: user.nombre || "",
     telefono: user.telefono || "",
     password: "",
+    fecha_baja: user.fecha_baja || null,
     rol: user.rol.id,
     // Usaremos un array de objetos con el id del hospital y los ids de las salas seleccionadas
     userHospitales: initialUserHospitals as UserHospital[],
