@@ -1,9 +1,10 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Head from 'next/head';
+import Image from 'next/image';
 
 type Registro = {
   [key: string]: number | any;
@@ -15,6 +16,18 @@ type Umbral = {
   min_warning: number;
   max_warning: number;
 };
+
+async function parseJsonResponse<T>(response: Response): Promise<T> {
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(`Error ${response.status}: ${text.slice(0, 200)}`);
+  }
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(`Respuesta no JSON: ${text.slice(0, 200)}`);
+  }
+}
 
 export default function VisorDispositivo() {
   const { dispositivo } = useParams();
@@ -42,17 +55,25 @@ export default function VisorDispositivo() {
 
   // Cargar umbrales desde la API
   useEffect(() => {
-    fetch('/api/umbrales')
-      .then(res => res.json())
-      .then(setUmbrales)
-      .catch(console.error);
+    const loadUmbrales = async () => {
+      try {
+        const response = await fetch('/api/umbrales');
+        const data = await parseJsonResponse<Record<string, Umbral>>(response);
+        setUmbrales(data);
+      } catch (error) {
+        console.error('Error al cargar umbrales:', error);
+      }
+    };
+
+    loadUmbrales();
   }, []);
 
   // Obtener datos del dispositivo
-  const fetchDatos = async () => {
+  const fetchDatos = useCallback(async () => {
+    if (!dispositivo) return;
     try {
       const res = await fetch(`/api/registro/get/${dispositivo}/last`);
-      const data = await res.json();
+      const data = await parseJsonResponse<Registro[]>(res);
       if (Array.isArray(data) && data.length > 0) {
         setRegistro(data[0]);
         alertaReproducida.current.clear(); // reset para nueva lectura
@@ -61,14 +82,14 @@ export default function VisorDispositivo() {
     } catch (error) {
       console.error('Error al obtener datos del dispositivo:', error);
     }
-  };
+  }, [dispositivo]);
 
   useEffect(() => {
     if (!dispositivo) return;
     fetchDatos();
     const interval = setInterval(fetchDatos, 60000); // cada minuto
     return () => clearInterval(interval);
-  }, [dispositivo]);
+  }, [dispositivo, fetchDatos]);
 
   const datosMostrar = registro
     ? [
@@ -112,10 +133,13 @@ export default function VisorDispositivo() {
     <div className="relative w-screen h-screen bg-white text-black text-center p-6">
       {/* Logo */}
       <div className="mb-2">
-        <img
+        <Image
           src="/cropped-LOGO-LODEPA-sin-fondo.png"
           alt="Logo LODEPA"
-          className="h-24 mx-auto"
+          width={160}
+          height={96}
+          className="h-24 w-auto mx-auto"
+          priority
         />
       </div>
       <div className="grid grid-cols-4 grid-rows-4 w-screen h-screen bg-white text-black text-center gap-6">
