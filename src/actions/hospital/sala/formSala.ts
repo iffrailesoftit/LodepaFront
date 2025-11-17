@@ -1,5 +1,5 @@
 "use server";
-import db, { executeQuery } from "@/lib/db";
+import db, { executeQuery, getConnection } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 export async function checkRefExists(
@@ -61,60 +61,127 @@ async function crearActualizarSala(sala: any) {
     }
     // Confirmar la transacción si todo fue correcto
     await connection.commit();
-
   } catch (error) {
-      // Si hay error, revertir la transacción
-      await connection.rollback();
-      throw error;
-    } finally {
-      // Liberar la conexión para que vuelva al pool
-      connection.release();
-    }
-    
-    // Revalidar la ruta para actualizar los datos en la UI
-    revalidatePath(`/dashboard/admin/hospital/${sala.id_hospital}/salas`);
+    // Si hay error, revertir la transacción
+    await connection.rollback();
+    throw error;
+  } finally {
+    // Liberar la conexión para que vuelva al pool
+    connection.release();
+  }
 
-    if(actualizar){
-      return "Se ha actualizado correctamente"
-    }else{
-      return "Se ha creado la Sala "
-    }
+  // Revalidar la ruta para actualizar los datos en la UI
+  revalidatePath(`/dashboard/admin/hospital/${sala.id_hospital}/salas`);
+
+  if (actualizar) {
+    return "Se ha actualizado correctamente";
+  } else {
+    return "Se ha creado la Sala ";
+  }
 }
 
 // Actualizar Salas en la base de datos
 export async function updateCrearSala(formData: FormData) {
-try {
-  // Obtener los datos del formulario
-  const sala: any = {
-    id: Number(formData.get("id") ?? 0),
-    id_hospital: Number(formData.get("id_hospital") ?? 0),
-    nombre: ((formData.get("sala") as string) || "").trim(),
-    n_dispositivo: ((formData.get("n_dispositivo") as string) || "").trim(),
-    referencia: ((formData.get("referencia") as string) || "").replace(/\s+/g, ""),
-    apikey: ((formData.get("apikey") as string) || "").replace(/\s+/g, ""),
-  };
+  try {
+    // Obtener los datos del formulario
+    const sala: any = {
+      id: Number(formData.get("id") ?? 0),
+      id_hospital: Number(formData.get("id_hospital") ?? 0),
+      nombre: ((formData.get("sala") as string) || "").trim(),
+      n_dispositivo: ((formData.get("n_dispositivo") as string) || "").trim(),
+      referencia: ((formData.get("referencia") as string) || "").replace(
+        /\s+/g,
+        ""
+      ),
+      apikey: ((formData.get("apikey") as string) || "").replace(/\s+/g, ""),
+    };
 
-  console.log(sala);
+    console.log(sala);
 
-  // Validar campos obligatorios
-  if (!sala.nombre || !sala.referencia || !sala.apikey) {
-    throw new Error("Faltan campos obligatorios");
-  }
+    // Validar campos obligatorios
+    if (!sala.nombre || !sala.referencia || !sala.apikey) {
+      throw new Error("Faltan campos obligatorios");
+    }
 
-  const existeRef = await checkRefExists(sala.referencia, sala.id);
-  if (existeRef) {
-    throw new Error("La referencia ya está en uso");
-  }
-  const mensaje= await crearActualizarSala(sala);
+    const existeRef = await checkRefExists(sala.referencia, sala.id);
+    if (existeRef) {
+      throw new Error("La referencia ya está en uso");
+    }
+    const mensaje = await crearActualizarSala(sala);
 
-  return{
-      ok:1,
-      mensaje:mensaje
-  }
-
-} catch (error) {
+    return {
+      ok: 1,
+      mensaje: mensaje,
+    };
+  } catch (error) {
     console.error("Error al actualizar usuario:", error);
     // En lugar de devolver un objeto de error, se relanza la excepción
     throw error;
+  }
+}
+
+export async function BajaSala(formData: FormData) {
+  const id = formData.get("Id")?.toString();
+  if (!id) throw new Error("**El ID de la sala es requerido.**");
+
+  const conn = await getConnection();
+
+  try {
+    await conn.beginTransaction();
+
+    await conn.query(
+      `UPDATE salas 
+       SET fecha_baja = NOW() 
+       WHERE id = ?`,
+      [id]
+    );
+
+    await conn.query(
+      `UPDATE dispositivos 
+        set encendido = "N"
+       WHERE sala = ?`,
+      [id]
+    );
+
+    await conn.commit();
+  } catch (error) {
+    await conn.rollback();
+    console.error("**Error al dar de baja la sala:**", error);
+    throw new Error("**Error al dar de baja la sala.**");
+  } finally {
+    conn.release();
+  }
+}
+
+export async function altaSala(formData: FormData) {
+  const id = formData.get("Id")?.toString();
+  if (!id) throw new Error("**El ID de la sala es requerido.**");
+
+  const conn = await getConnection();
+
+  try {
+    await conn.beginTransaction();
+
+    await conn.query(
+      `UPDATE salas 
+       SET fecha_baja = NULL 
+       WHERE id = ?`,
+      [id]
+    );
+
+    await conn.query(
+      `UPDATE dispositivos 
+          set encendido = "S"
+       WHERE sala = ?`,
+      [id]
+    );
+
+    await conn.commit();
+  } catch (error) {
+    await conn.rollback();
+    console.error("**Error al dar de alta la sala:**", error);
+    throw new Error("**Error al dar de alta la sala.**");
+  } finally {
+    conn.release();
   }
 }

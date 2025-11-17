@@ -6,6 +6,7 @@ import { RowDataPacket } from "mysql2/promise";
 export interface Hospital extends RowDataPacket {
   id: number;
   hospital: string;
+  fecha_baja: Date | null;
 }
 
 export async function getHospitalAll(): Promise<Hospital[]> {

@@ -29,4 +29,9 @@ export async function executeQuery<T = any>(
   }
 }
 
+// 🔹 Obtener conexión manual (para transacciones)
+export async function getConnection() {
+  return await db.getConnection();
+}
+
 export default db;

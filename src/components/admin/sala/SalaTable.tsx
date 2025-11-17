@@ -6,16 +6,19 @@ import SalaDispositivosFilter from "./SalaFilter"
 import { useState, useEffect } from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import CambiarEstadoDip from "./modal/CambiarEstadoDip"
+import AltaSalaModal from "./modal/AltaSalaModal"
+import BajaSalaModal from "./modal/BajaSalaModal"
+import SalaRow from "./SalaRow"
+import { Hospital } from "@/actions/hospital/getHospital"
 
 interface SalaProps {
     sala: SalasDispositivos[]
-    idhospital: number
+    hospital: Hospital
 }
 
-export default function SalaTable({ sala, idhospital }: SalaProps) {
+export default function SalaTable({ sala, hospital }: SalaProps) {
     const [filteredSalas, setFilteredSalas] = useState(sala)
     const [isMobile, setIsMobile] = useState(false)
-
     // Paginación
     const [currentPage, setCurrentPage] = useState(1)
     const [itemsPerPage, setItemsPerPage] = useState(10)
@@ -80,7 +83,7 @@ export default function SalaTable({ sala, idhospital }: SalaProps) {
                                 <div className="flex justify-between items-center mb-2">
                                     <h3 className="font-medium text-gray-900">{s.n_sala}</h3>
                                     <span className=" px-2 py-1 rounded-full text-xs font-medium">
-                                        <CambiarEstadoDip id={s.id_dispositivo} estado={s.encendido} />
+                                        <CambiarEstadoDip sala={s} />
                                     </span>
                                 </div>
 
@@ -103,11 +106,21 @@ export default function SalaTable({ sala, idhospital }: SalaProps) {
                                             {updateDate.toLocaleString()}
                                         </span>
                                     </p>
-                                    
+                                    <p>
+                                        <span className="font-medium">Fecha Baja:</span>{" "}
+                                        <span className={s.fecha_baja ? "text-red-500" : "text-gray-800"}>
+                                            {s.fecha_baja ? s.fecha_baja.toLocaleString("es-ES") : "Activo"}
+                                        </span>
+                                    </p>
                                 </div>
 
                                 <div className="mt-4 flex space-x-2">
-                                    <EditarSala sala={s} idhospital={idhospital} />
+                                    <EditarSala sala={s} hospital={hospital} />
+                                    {!s.fecha_baja ? (
+                                        <BajaSalaModal sala={s} hospital={hospital} />
+                                    ) : (
+                                        <AltaSalaModal sala={s} hospital={hospital} />
+                                    )}
                                 </div>
                             </div>
                         )
@@ -127,30 +140,15 @@ export default function SalaTable({ sala, idhospital }: SalaProps) {
                             <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">
                                 Ultima Actualización
                             </th>
+                            <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Fecha Baja</th>
                             <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Activo</th>
                             <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
                         {currentSalas.map((s: SalasDispositivos) => {
-                            const updateDate = new Date(s.ultimaActualizacion)
-                            const now = new Date()
-                            const diffMinutes = (now.getTime() - updateDate.getTime()) / (1000 * 60)
-
                             return (
-                                <tr key={s.id_sala} className="hover:bg-gray-50">
-                                    <td className="border px-4 py-2 text-sm">{s.n_sala}</td>
-                                    <td className="border px-4 py-2 text-sm">{s.n_dispositivo}</td>
-                                    <td className="border px-4 py-2 text-sm">{s.referencia}</td>
-                                    <td className="border px-4 py-2 text-sm">{s.api_key_inbiot}</td>
-                                    <td className={`border px-4 py-2 text-sm ${diffMinutes > 75 ? "text-red-500" : "text-gray-800"}`}>
-                                        {updateDate.toLocaleString()}
-                                    </td>
-                                    <td className="border px-4 py-2 text-sm"><CambiarEstadoDip id={s.id_dispositivo} estado={s.encendido} /></td>
-                                    <td className="border px-4 py-2 text-sm">
-                                        <EditarSala sala={s} idhospital={idhospital} />
-                                    </td>
-                                </tr>
+                                <SalaRow key={s.id_sala} sala={s} hospital={hospital} />
                             )
                         })}
                     </tbody>

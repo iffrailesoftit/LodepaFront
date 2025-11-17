@@ -12,11 +12,13 @@ export interface Salas extends RowDataPacket {
   id: number;
   n_sala: string;
   hospital: number;
+  fecha_alta: Date;
 }
 
 export interface SalasDispositivos extends RowDataPacket {
   id_sala: number;
   n_sala: string;
+  fecha_baja: Date;
   id_dispositivo: number;
   n_dispositivo: string;
   referencia: string;
@@ -40,9 +42,10 @@ export async function getSalaByHospital(id:number): Promise<Sala[]> {
 export async function getSalaYDispositivoByHospital(id:number): Promise<SalasDispositivos[]> {
   try {
     const [rows] = await executeQuery<SalasDispositivos[] & RowDataPacket[]>(
-      `SELECT 
+      `SELECT
           s.id AS id_sala,
           s.n_sala,
+          s.fecha_baja,
           d.id AS id_dispositivo,
           d.n_dispositivo,
           d.referencia,

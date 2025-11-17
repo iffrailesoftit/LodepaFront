@@ -1,18 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { BajaUser } from "@/actions/usuario/formUsuario";
-import { AlertTriangle, UserMinus, X } from "lucide-react";
+import { BajaHospital } from "@/actions/hospital/formHospital";
+import { AlertTriangle, CircleMinus, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
-
-interface EliminarModalProps { 
-    userId: number;
-    userName: string;
-}
-
-export default function EliminarModal({ userId, userName }: EliminarModalProps) {
+export default function BajaHospitalModal({ hospital }: any) {
     const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
 
@@ -28,13 +22,13 @@ export default function EliminarModal({ userId, userName }: EliminarModalProps) 
         e.preventDefault();
         try {
             const formData = new FormData();
-            formData.append("userId", userId.toString());
-            await BajaUser(formData);
+            formData.append("Id", hospital.id.toString());
+            await BajaHospital(formData);
             setIsOpen(false);
-            toast.success("¡Usuario dado de baja correctamente!");
+            toast.success("¡Hospital dado de baja correctamente!");
             router.refresh();
         } catch (error) {
-            console.error("Error al dar de baja el usuario:", error);
+            console.error("Error al dar de baja el hospital:", error);
             toast.error("Intentelo de Nuevo");
         }
     };
@@ -44,8 +38,7 @@ export default function EliminarModal({ userId, userName }: EliminarModalProps) 
             <button 
                 onClick={() => setIsOpen(true)} 
                 className="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded flex items-center justify-center transition-colors">
-                  {/* <Trash2 className="h-4 w-4 mr-1" /> */}
-                    <UserMinus className="h-4 w-4 mr-1" />
+                <CircleMinus className="h-4 w-4 mr-1" />
                 Baja
             </button>
             {isOpen && (
@@ -65,7 +58,7 @@ export default function EliminarModal({ userId, userName }: EliminarModalProps) 
                         </div>
                         <div className="py-6">
                             <p className="text-gray-600 mb-6">
-                                ¿Estás seguro de que deseas dar de baja a <span className="font-semibold text-gray-900">{userName}</span>? Esta acción no se puede deshacer.
+                                ¿Estás seguro de que deseas dar de baja a <span className="font-semibold text-gray-900">{hospital.hospital}</span>? Esta acción no se puede deshacer.
                             </p>
                             <form onSubmit={handleSubmit} className="flex justify-end space-x-3">
                                 <button

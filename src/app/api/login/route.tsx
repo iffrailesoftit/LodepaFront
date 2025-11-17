@@ -10,6 +10,7 @@ interface User {
   password: string;
   apellido: string;
   rol: number;
+  fecha_baja: Date | null;
 }
 
 export async function POST(req: Request) {
@@ -37,6 +38,20 @@ export async function POST(req: Request) {
         { status: 404 }
       );
     }
+
+    if (user.fecha_baja) {
+    const fechaBaja = new Date(user.fecha_baja);
+    const ahora = new Date();
+
+    // ✅ Si la fecha de baja es anterior a ahora → usuario eliminado
+    if (fechaBaja < ahora) {
+      return NextResponse.json(
+        { error: 'Usuario dado de baja' },
+        { status: 401 }
+      );
+    }
+  }
+
     // console.log({ user })
     // Verificar la contraseña
     const isPasswordValid = user.password === password;

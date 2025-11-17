@@ -1,21 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { BajaUser } from "@/actions/usuario/formUsuario";
-import { AlertTriangle, UserMinus, X } from "lucide-react";
-import toast from "react-hot-toast";
+
+import { Hospital } from "@/actions/hospital/getHospital";
+import { BajaSala } from "@/actions/hospital/sala/formSala";
+import { SalasDispositivos } from "@/actions/hospital/sala/getSala";
+import { AlertTriangle, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
-
-interface EliminarModalProps { 
-    userId: number;
-    userName: string;
+interface BajaSalaModalProps {
+    sala: SalasDispositivos
+    hospital: Hospital
 }
 
-export default function EliminarModal({ userId, userName }: EliminarModalProps) {
+export default function BajaSalaModal({ sala }: BajaSalaModalProps) {
     const [isOpen, setIsOpen] = useState(false);
     const router = useRouter();
-
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = "hidden";
@@ -28,24 +29,24 @@ export default function EliminarModal({ userId, userName }: EliminarModalProps) 
         e.preventDefault();
         try {
             const formData = new FormData();
-            formData.append("userId", userId.toString());
-            await BajaUser(formData);
+            formData.append("Id", sala.id_sala.toString());
+            await BajaSala(formData);
             setIsOpen(false);
-            toast.success("¡Usuario dado de baja correctamente!");
+            toast.success("¡Sala dada de baja correctamente!");
             router.refresh();
         } catch (error) {
-            console.error("Error al dar de baja el usuario:", error);
+            console.error("Error al dar de baja la sala:", error);
             toast.error("Intentelo de Nuevo");
         }
     };
 
     return (
         <>
-            <button 
-                onClick={() => setIsOpen(true)} 
+            <button
+                onClick={() => setIsOpen(true)}
                 className="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded flex items-center justify-center transition-colors">
-                  {/* <Trash2 className="h-4 w-4 mr-1" /> */}
-                    <UserMinus className="h-4 w-4 mr-1" />
+                <Trash2 className="h-4 w-4 mr-1" />
+                {/* <UserMinus className="h-4 w-4 mr-1" /> */}
                 Baja
             </button>
             {isOpen && (
@@ -54,18 +55,18 @@ export default function EliminarModal({ userId, userName }: EliminarModalProps) 
                         <div className="flex items-center justify-between border-b pb-4">
                             <div className="flex items-center">
                                 <AlertTriangle className="h-6 w-6 text-red-500 mr-3" />
-                                <h2 className="text-xl font-semibold text-gray-800">Dar de Baja Usuario</h2>
+                                <h2 className="text-xl font-semibold text-gray-800">Dar de Baja Sala</h2>
                             </div>
-                            <button 
-                                onClick={() => setIsOpen(false)} 
-                                className="text-gray-500 hover:text-gray-700 transition-colors" 
+                            <button
+                                onClick={() => setIsOpen(false)}
+                                className="text-gray-500 hover:text-gray-700 transition-colors"
                                 aria-label="Cerrar">
                                 <X className="h-6 w-6" />
                             </button>
                         </div>
                         <div className="py-6">
                             <p className="text-gray-600 mb-6">
-                                ¿Estás seguro de que deseas dar de baja a <span className="font-semibold text-gray-900">{userName}</span>? Esta acción no se puede deshacer.
+                                ¿Estás seguro de que deseas dar de baja a <span className="font-semibold text-gray-900">{sala.n_sala}</span>?.
                             </p>
                             <form onSubmit={handleSubmit} className="flex justify-end space-x-3">
                                 <button

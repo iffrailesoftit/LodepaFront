@@ -7,6 +7,7 @@ import UsuarioFilter from "./UsuarioFilter"
 import { ChevronLeft, ChevronRight, Pencil } from "lucide-react"
 import EliminarModal from "./formulario/EliminarModal"
 import { useRouter } from 'next/navigation';
+import AltaUsuarioModal from "./formulario/AltaUsuarioModal"
 
 
 interface UsuarioTableProps {
@@ -104,13 +105,13 @@ export default function UsuarioTable({ usuarios }: UsuarioTableProps) {
                   <div className="mt-1 flex flex-wrap gap-1">
                     {usuario.hospitales.length > 0
                       ? usuario.hospitales.map((h) => (
-                          <span
-                            key={h.id}
-                            className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium"
-                          >
-                            {h.hospital}
-                          </span>
-                        ))
+                        <span
+                          key={h.id}
+                          className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-medium"
+                        >
+                          {h.hospital}
+                        </span>
+                      ))
                       : "Ninguno"}
                   </div>
                 </div>
@@ -120,15 +121,15 @@ export default function UsuarioTable({ usuarios }: UsuarioTableProps) {
                   <div className="mt-1 flex flex-wrap gap-1">
                     {usuario.hospitales.flatMap((h) => h.salas).length > 0
                       ? usuario.hospitales
-                          .flatMap((h) => h.salas)
-                          .map((s) => (
-                            <span
-                              key={s.id}
-                              className="inline-block bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium"
-                            >
-                              {s.n_sala}
-                            </span>
-                          ))
+                        .flatMap((h) => h.salas)
+                        .map((s) => (
+                          <span
+                            key={s.id}
+                            className="inline-block bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs font-medium"
+                          >
+                            {s.n_sala}
+                          </span>
+                        ))
                       : "Ninguna"}
                   </div>
                 </div>
@@ -136,17 +137,22 @@ export default function UsuarioTable({ usuarios }: UsuarioTableProps) {
 
               <div className="mt-4 flex space-x-2">
                 <button onClick={() => handleRedirigir(usuario.id)}
-                className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 px-3 rounded flex items-center justify-center transition-colors">
-                <Pencil className="h-4 w-4 mr-1" />
+                  className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-2 px-3 rounded flex items-center justify-center transition-colors">
+                  <Pencil className="h-4 w-4 mr-1" />
                   Editar
                 </button>
-                <EliminarModal userId={usuario.id} userName={usuario.nombre} />                    
+                {/* Botón para abrir modal de Eliminar */}
+                {!usuario.fecha_baja ? (
+                  <EliminarModal userId={usuario.id} userName={usuario.nombre} />
+                ) : (
+                  <AltaUsuarioModal userId={usuario.id} userName={usuario.nombre} />
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
-      
+
       {/* Vista desktop: Tabla tradicional */}
       <div className={`overflow-x-auto rounded-lg shadow ${isMobile ? "hidden" : "block"}`}>
         <table className="min-w-full bg-white border-collapse">
@@ -161,6 +167,7 @@ export default function UsuarioTable({ usuarios }: UsuarioTableProps) {
               <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Rol</th>
               <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Hospitales</th>
               <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Salas</th>
+              <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Fecha Baja</th>
               <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" colSpan={2}>
                 Acciones
               </th>
@@ -181,22 +188,20 @@ export default function UsuarioTable({ usuarios }: UsuarioTableProps) {
             <button
               onClick={() => goToPage(currentPage - 1)}
               disabled={currentPage === 1}
-              className={`relative inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${
-                currentPage === 1
+              className={`relative inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${currentPage === 1
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                   : "bg-white text-gray-700 hover:bg-gray-50"
-              }`}
+                }`}
             >
               Anterior
             </button>
             <button
               onClick={() => goToPage(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className={`relative ml-3 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${
-                currentPage === totalPages
+              className={`relative ml-3 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${currentPage === totalPages
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                   : "bg-white text-gray-700 hover:bg-gray-50"
-              }`}
+                }`}
             >
               Siguiente
             </button>
@@ -214,11 +219,10 @@ export default function UsuarioTable({ usuarios }: UsuarioTableProps) {
                 <button
                   onClick={() => goToPage(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className={`relative inline-flex items-center rounded-l-md px-2 py-2 ${
-                    currentPage === 1
+                  className={`relative inline-flex items-center rounded-l-md px-2 py-2 ${currentPage === 1
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                       : "bg-white text-gray-500 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   <span className="sr-only">Anterior</span>
                   <ChevronLeft className="h-5 w-5" aria-hidden="true" />
@@ -242,9 +246,8 @@ export default function UsuarioTable({ usuarios }: UsuarioTableProps) {
                     <button
                       key={pageNum}
                       onClick={() => goToPage(pageNum)}
-                      className={`relative inline-flex items-center px-4 py-2 text-sm font-medium ${
-                        currentPage === pageNum ? "bg-blue-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50"
-                      }`}
+                      className={`relative inline-flex items-center px-4 py-2 text-sm font-medium ${currentPage === pageNum ? "bg-blue-500 text-white" : "bg-white text-gray-500 hover:bg-gray-50"
+                        }`}
                     >
                       {pageNum}
                     </button>
@@ -254,11 +257,10 @@ export default function UsuarioTable({ usuarios }: UsuarioTableProps) {
                 <button
                   onClick={() => goToPage(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className={`relative inline-flex items-center rounded-r-md px-2 py-2 ${
-                    currentPage === totalPages
+                  className={`relative inline-flex items-center rounded-r-md px-2 py-2 ${currentPage === totalPages
                       ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                       : "bg-white text-gray-500 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   <span className="sr-only">Siguiente</span>
                   <ChevronRight className="h-5 w-5" aria-hidden="true" />

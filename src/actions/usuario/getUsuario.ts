@@ -10,6 +10,7 @@ export interface Usuario {
   nombre: string;
   telefono: string | null;
   password: string;
+  fecha_baja: Date | null;
   rol: {
     id: number;
     rol: string;
@@ -38,6 +39,7 @@ function pasar(rows:any){
         nombre: row.nombre,
         password: row.password,
         telefono: row.telefono,
+        fecha_baja: row.fecha_baja,
         rol: {
           id: row.id_rol,
           rol: row.n_rol,
@@ -94,6 +96,7 @@ export const getVerUsuarioAll = async (): Promise<Usuario[]> => {
       u.email,
       u.password,
       u.telefono,
+      u.fecha_baja,
       u.rol AS id_rol,
       r.rol AS n_rol,
       uh.hospital_id AS id_hospital,
@@ -127,6 +130,7 @@ export const getVerUsuariobyId = async (id:number): Promise<Usuario[]> => {
       u.email,
       u.password,
       u.telefono,
+      u.fecha_baja,
       u.rol AS id_rol,
       r.rol AS n_rol,
       uh.hospital_id AS id_hospital,

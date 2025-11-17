@@ -1,5 +1,6 @@
 "use client";
 
+import { Hospital } from "@/actions/hospital/getHospital";
 import { checkRefExists, updateCrearSala } from "@/actions/hospital/sala/formSala";
 import { Pencil } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
@@ -7,10 +8,11 @@ import toast from "react-hot-toast";
 
 interface SalaProps {
     sala: any;
-    idhospital: number;
+    hospital: Hospital;
 }
 
-export default function EditarSala({ sala, idhospital }: SalaProps) {
+export default function EditarSala({ sala, hospital }: SalaProps) {
+    const idhospital = hospital.id_hospital;
     const [formData, setFormData] = useState({
         id: sala.id_sala,
         id_hospital: idhospital,

@@ -1,20 +1,17 @@
-"use client";
+"use client"
 
+import { altaHospital } from "@/actions/hospital/formHospital";
+import { Hospital } from "@/actions/hospital/getHospital";
+import { AlertTriangle, X, CircleFadingPlus } from "lucide-react";
 import { useState, useEffect } from "react";
-import { BajaUser } from "@/actions/usuario/formUsuario";
-import { AlertTriangle, UserMinus, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 
 
-interface EliminarModalProps { 
-    userId: number;
-    userName: string;
-}
 
-export default function EliminarModal({ userId, userName }: EliminarModalProps) {
-    const [isOpen, setIsOpen] = useState(false);
-    const router = useRouter();
+export default function ReingresoHospitalModal({ hospital }: { hospital: Hospital }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
     useEffect(() => {
         if (isOpen) {
@@ -28,13 +25,13 @@ export default function EliminarModal({ userId, userName }: EliminarModalProps) 
         e.preventDefault();
         try {
             const formData = new FormData();
-            formData.append("userId", userId.toString());
-            await BajaUser(formData);
+            formData.append("Id", hospital.id.toString());
+            await altaHospital(formData);
             setIsOpen(false);
-            toast.success("¡Usuario dado de baja correctamente!");
+            toast.success("¡Hospital dado de alta correctamente!");
             router.refresh();
         } catch (error) {
-            console.error("Error al dar de baja el usuario:", error);
+            console.error("Error al dar de alta el hospital:", error);
             toast.error("Intentelo de Nuevo");
         }
     };
@@ -43,10 +40,9 @@ export default function EliminarModal({ userId, userName }: EliminarModalProps) 
         <>
             <button 
                 onClick={() => setIsOpen(true)} 
-                className="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded flex items-center justify-center transition-colors">
-                  {/* <Trash2 className="h-4 w-4 mr-1" /> */}
-                    <UserMinus className="h-4 w-4 mr-1" />
-                Baja
+                className="bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded flex items-center justify-center transition-colors">
+                <CircleFadingPlus className="h-4 w-4 mr-1" />
+                Alta
             </button>
             {isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 bg-opacity-50">
@@ -54,7 +50,7 @@ export default function EliminarModal({ userId, userName }: EliminarModalProps) 
                         <div className="flex items-center justify-between border-b pb-4">
                             <div className="flex items-center">
                                 <AlertTriangle className="h-6 w-6 text-red-500 mr-3" />
-                                <h2 className="text-xl font-semibold text-gray-800">Dar de Baja Usuario</h2>
+                                <h2 className="text-xl font-bold text-gray-800">Dar de Alta Hospital</h2>
                             </div>
                             <button 
                                 onClick={() => setIsOpen(false)} 
@@ -65,7 +61,7 @@ export default function EliminarModal({ userId, userName }: EliminarModalProps) 
                         </div>
                         <div className="py-6">
                             <p className="text-gray-600 mb-6">
-                                ¿Estás seguro de que deseas dar de baja a <span className="font-semibold text-gray-900">{userName}</span>? Esta acción no se puede deshacer.
+                                ¿Estás seguro de que deseas dar de alta a <span className="font-semibold text-gray-900">{hospital.hospital}</span>? Esta acción no se puede deshacer.
                             </p>
                             <form onSubmit={handleSubmit} className="flex justify-end space-x-3">
                                 <button
@@ -76,8 +72,8 @@ export default function EliminarModal({ userId, userName }: EliminarModalProps) 
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 bg-red-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-red-700 transition-colors">
-                                    Dar de Baja
+                                    className="px-4 py-2 bg-green-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-green-700 transition-colors">
+                                    Dar de Alta
                                 </button>
                             </form>
                         </div>

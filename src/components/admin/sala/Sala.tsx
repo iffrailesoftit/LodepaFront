@@ -25,11 +25,11 @@ export default async function Sala({hospitalId}: SalaProps) {
       <div className="bg-white p-6 rounded-lg shadow-md">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-gray-700">Lista de Salas y Dispositivos</h2>
-          <EditarSala sala={sala} idhospital={hospitalId}/>
+          <EditarSala sala={sala} hospital={hospital}/>
         </div>
 
         {/* Le pasamos la lista de usuarios al componente de la tabla */}
-        <SalaTable sala={salas} idhospital={hospitalId} />
+        <SalaTable sala={salas} hospital={hospital} />
       </div>
     </div>
     );

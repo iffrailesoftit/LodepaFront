@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import type React from "react"
 
 import ProgressCircle from "./progress-circle"
@@ -38,6 +38,7 @@ const Parametros: React.FC<ParametrosProps> = ({ id }) => {
   const [parametros, setParametros] = useState<Parametro[]>(parametrosIniciales)
   const [loading, setLoading] = useState(true)
   const [updateTime, setUpdateTime] = useState<string | null>(null)
+  const inFlightControllerRef = useRef<AbortController | null>(null)
 
   // Función para mapear colores hexadecimales a clases de color
   const hexToColorClass = (hexColor: string): "success" | "warning" | "dangerous" => {
@@ -54,27 +55,27 @@ const Parametros: React.FC<ParametrosProps> = ({ id }) => {
   useEffect(() => {
     if (!id) return
 
-    // Función que realiza el fetch y actualiza el estado
-    const fetchParametros = async () => {
-      setLoading(true)
+    let intervalId: ReturnType<typeof setInterval> | null = null
+
+    const loadData = async () => {
+      inFlightControllerRef.current?.abort()
+      const ac = new AbortController()
+      inFlightControllerRef.current = ac
       try {
+        setLoading(true)
         const response = await fetch(`/api/registro/get/${id}/last`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          signal: ac.signal,
         })
-
         if (!response.ok) throw new Error("Error en la respuesta del servidor")
-
         const data = await response.json()
         const ultimoRegistro = data.at(-1)
-
-        // Actualizar timestamp
         if (ultimoRegistro?.updateTime && Array.isArray(ultimoRegistro.updateTime)) {
           const [year, month, day, hours, minutes, seconds] = ultimoRegistro.updateTime
           setUpdateTime(new Date(year, month - 1, day, hours, minutes, seconds).toLocaleString())
         }
-
-        // Mapear valores
         const nuevosParametros = parametrosIniciales.map((parametro) => {
           const valor = ultimoRegistro[parametro.key] ?? parametro.valor
           let unidad = parametro.unidad
@@ -83,33 +84,45 @@ const Parametros: React.FC<ParametrosProps> = ({ id }) => {
           }
           return { ...parametro, valor, unidad }
         })
-
-        // Obtener colores
         const parametrosParaUmbrales = nuevosParametros.map((p) => ({ parametro: p.key, valor: p.valor }))
         const colores = await getStatusBatch(parametrosParaUmbrales, id)
-
-        // Asignar colores
         const conColor = nuevosParametros.map((p) => ({
           ...p,
           color: hexToColorClass(colores[p.key]),
         }))
-
         setParametros(conColor)
-      } catch (error) {
-        console.error("Error obteniendo los parámetros:", error)
+      } catch (error: any) {
+        if (error?.name !== "AbortError") {
+          console.error("Error obteniendo los parámetros:", error)
+        }
       } finally {
-        setLoading(false)
+        if (!inFlightControllerRef.current?.signal.aborted) {
+          setLoading(false)
+        }
       }
     }
 
-    // Fetch inicial
-    fetchParametros()
+    loadData()
+    intervalId = setInterval(loadData, 60_000)
 
-    // Configurar polling cada 60 segundos
-    const intervalId = setInterval(fetchParametros, 60_000)
+    const onVisibility = () => {
+      if (document.hidden) {
+        if (intervalId) {
+          clearInterval(intervalId)
+          intervalId = null
+        }
+      } else {
+        loadData()
+        intervalId = setInterval(loadData, 60_000)
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibility)
 
-    // Cleanup
-    return () => clearInterval(intervalId)
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility)
+      if (intervalId) clearInterval(intervalId)
+      inFlightControllerRef.current?.abort()
+    }
   }, [id])
 
   return (

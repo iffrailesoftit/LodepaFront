@@ -141,6 +141,30 @@ export async function deleteUser(formData: FormData) {
   revalidatePath(`/dashboard/admin`);
 }
 
+// Eliminar usuario
+export async function BajaUser(formData: FormData) {
+  const userId = formData.get("userId");
+  if (!userId) return;
+
+  await executeQuery(`UPDATE usuarios SET fecha_baja = NOW() WHERE id = ?`, [userId]);
+
+  // Revalidamos la ruta /usuarios para que se vea reflejado el cambio
+  revalidatePath(`/dashboard/admin`);
+}
+
+// Dar de Alta Usuario
+export async function altaUsuario(formData: FormData) {
+  const id = formData.get("userId")?.toString();
+  if (!id) throw new Error("**El ID del usuario es requerido.**");
+  try {
+    await executeQuery(`UPDATE usuarios SET fecha_baja = NULL WHERE id = ?`, [id]);
+  } catch (error) {
+    console.error("**Error al dar de alta:**", error);
+    throw new Error("**Error al dar de alta el usuario.**");
+  }
+}
+
+
 // Editar usuario
 export async function editUser(formData: FormData) {
   try {

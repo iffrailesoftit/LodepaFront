@@ -1,18 +1,38 @@
 "use client";
 
 import { updateEstadoDip } from "@/actions/dispositivo/formDispositivo";
+import { SalasDispositivos } from "@/actions/hospital/sala/getSala";
 import { Power, PowerOff } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 interface CambiarEstadoDipProps {
-  id: number;
-  estado: string;
+  sala: SalasDispositivos;
 }
 
-export default function CambiarEstadoDip({ id, estado }: CambiarEstadoDipProps) {
-  const [encendido, setEncendido] = useState<string>(estado);
+export default function CambiarEstadoDip({ sala }: CambiarEstadoDipProps) {
+  const id = sala.id_dispositivo;
+
+  // Normalizamos el valor inicial a "S" / "N"
+  const initialEstado = (sala.encendido ?? "")
+    .toString()
+    .trim()
+    .toUpperCase();
+
+  const [encendido, setEncendido] = useState<string>(initialEstado);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Si sala.encendido cambia desde el servidor (router.refresh),
+  // sincronizamos el estado local:
+  useEffect(() => {
+    const normalizado = (sala.encendido ?? "")
+      .toString()
+      .trim()
+      .toUpperCase();
+    setEncendido(normalizado);
+  }, [sala.encendido]);
+
+  // isActive SIEMPRE depende de encendido
   const isActive = encendido === "S";
 
   const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -36,6 +56,8 @@ export default function CambiarEstadoDip({ id, estado }: CambiarEstadoDipProps) 
           style: { color: "#ff0000" },
         });
       }
+
+      // Aquí actualizas el estado local → cambia isActive → cambia la clase
       setEncendido(nuevo);
     } catch (error) {
       console.error("Error al actualizar estado DIP:", error);
@@ -54,9 +76,9 @@ export default function CambiarEstadoDip({ id, estado }: CambiarEstadoDipProps) 
         className={`
           appearance-none cursor-pointer rounded-full px-3 py-1 text-sm font-medium transition-all duration-200
           ${
-            isActive
-              ? "bg-green-100 text-green-800 border-2 border-green-200 hover:bg-green-200 pr-7 "
-              : "bg-gray-100 text-gray-600 border-2 border-gray-200 hover:bg-gray-200 pr-7 "
+            (encendido === "S")
+              ? "bg-green-100 text-green-800 border-2 border-green-200 hover:bg-green-200 pr-7"
+              : "bg-gray-100 text-gray-600 border-2 border-gray-200 hover:bg-gray-200 pr-7"
           }
           ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500

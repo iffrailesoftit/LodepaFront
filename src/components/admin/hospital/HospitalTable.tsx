@@ -5,6 +5,8 @@ import EditarHospital from "./modals/EditarHospital";
 import { useState, useEffect } from "react";
 import HospitalFilter from "./HospitalFilter";
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import BajaHospitalModal from "./modals/BajaHospitalModal";
+import ReingresoHospitalModal from "./modals/ReingresoHospitalModal";
 
 export default function HospitalTable({ hospitales }: any) {
     const [filteredHospitales, setFilteredHospitales] = useState(hospitales);
@@ -88,6 +90,11 @@ export default function HospitalTable({ hospitales }: any) {
 
                             <div className="mt-4 flex space-x-2">
                                 <EditarHospital hospital={hospital} />
+                                {!hospital.fecha_baja ? (
+                                            <BajaHospitalModal hospital={hospital} />
+                                        ) : (
+                                            <ReingresoHospitalModal hospital={hospital} />
+                                        )}
                             </div>
                         </div>
                     ))}
@@ -102,6 +109,7 @@ export default function HospitalTable({ hospitales }: any) {
                             <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">ID</th>
                             <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Nombre</th>
                             <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Numero de Salas</th>
+                            <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Fecha Baja</th>
                             <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
@@ -116,7 +124,21 @@ export default function HospitalTable({ hospitales }: any) {
                                 </td>
                                 <td className="border px-4 py-2 text-sm">{hospital.num_salas}</td>
                                 <td className="border px-4 py-2 text-sm">
-                                    <EditarHospital hospital={hospital} />
+                                    <span className="font-medium">
+                                        {hospital.fecha_baja
+                                            ? hospital.fecha_baja.toLocaleDateString('es-ES')
+                                            : 'Activo'}
+                                    </span>
+                                </td>
+                                <td className="border px-4 py-2 text-sm">
+                                    <div className="flex space-x-2">
+                                        <EditarHospital hospital={hospital} />
+                                        {!hospital.fecha_baja ? (
+                                            <BajaHospitalModal hospital={hospital} />
+                                        ) : (
+                                            <ReingresoHospitalModal hospital={hospital} />
+                                        )}
+                                    </div>
                                 </td>
                             </tr>
                         ))}
@@ -132,8 +154,8 @@ export default function HospitalTable({ hospitales }: any) {
                             onClick={() => goToPage(currentPage - 1)}
                             disabled={currentPage === 1}
                             className={`relative inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${currentPage === 1
-                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                    : "bg-white text-gray-700 hover:bg-gray-50"
+                                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                : "bg-white text-gray-700 hover:bg-gray-50"
                                 }`}
                         >
                             Anterior
@@ -142,8 +164,8 @@ export default function HospitalTable({ hospitales }: any) {
                             onClick={() => goToPage(currentPage + 1)}
                             disabled={currentPage === totalPages}
                             className={`relative ml-3 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium ${currentPage === totalPages
-                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                    : "bg-white text-gray-700 hover:bg-gray-50"
+                                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                : "bg-white text-gray-700 hover:bg-gray-50"
                                 }`}
                         >
                             Siguiente
@@ -163,8 +185,8 @@ export default function HospitalTable({ hospitales }: any) {
                                     onClick={() => goToPage(currentPage - 1)}
                                     disabled={currentPage === 1}
                                     className={`relative inline-flex items-center rounded-l-md px-2 py-2 ${currentPage === 1
-                                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                            : "bg-white text-gray-500 hover:bg-gray-50"
+                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                        : "bg-white text-gray-500 hover:bg-gray-50"
                                         }`}
                                 >
                                     <span className="sr-only">Anterior</span>
@@ -201,8 +223,8 @@ export default function HospitalTable({ hospitales }: any) {
                                     onClick={() => goToPage(currentPage + 1)}
                                     disabled={currentPage === totalPages}
                                     className={`relative inline-flex items-center rounded-r-md px-2 py-2 ${currentPage === totalPages
-                                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                            : "bg-white text-gray-500 hover:bg-gray-50"
+                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                        : "bg-white text-gray-500 hover:bg-gray-50"
                                         }`}
                                 >
                                     <span className="sr-only">Siguiente</span>
