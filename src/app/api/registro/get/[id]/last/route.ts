@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { executeQuery } from "@/lib/db";
-import { getSession } from "@/actions/auth/getSession";
+// import { getSession } from "@/actions/auth/getSession";
 
 // Función para parsear la fecha sin forzar zona horaria
 function parseUpdateTime(updateTime: string): number[] {
@@ -33,10 +33,10 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession();
-    if (!session) {
-      return NextResponse.json({ message: "No autorizado" }, { status: 401 });
-    }
+    // const session = await getSession();
+    // if (!session) {
+    //   return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+    // }
 
     // Esperar a que se resuelvan los parámetros
     const params = await context.params;

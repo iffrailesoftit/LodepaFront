@@ -10,8 +10,8 @@ import { Suspense } from "react";
 // Carga dinámica del componente Submenu para deshabilitar SSR
 //const Submenu = dynamic(() => import('@/components/dispositivo/SubMenu/SubMenu'), { ssr: false });
 
-export default async function DispositivoPage({ params }: any) {
-  const { id } = params;
+export default async function DispositivoPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const disp = await getDispositivo(id);
   const purificador = await getPurificadorBySala(id);
   // console.log(disp);

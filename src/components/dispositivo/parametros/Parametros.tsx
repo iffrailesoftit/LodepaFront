@@ -23,15 +23,15 @@ const parametrosIniciales: Parametro[] = [
   { key: "temperature", valor: 21.3, unidad: "°C", nombre: "Temperatura", info: "Temperatura ambiente en grados Celsius" },
   { key: "humidity", valor: 52, unidad: "%", nombre: "Humedad", info: "Porcentaje de humedad relativa en el aire" },
   { key: "co2", valor: 803, unidad: "ppm", nombre: "CO₂", info: "Concentración de dióxido de carbono en partes por millón" },
-  { key: "formaldehyde", valor: 50, unidad: "ppb", nombre: "Formaldehído", info: "Concentración de formaldehído en partes por millón" },
+  { key: "formaldehyde", valor: 0.05, unidad: "ppm", nombre: "Formaldehído", info: "Concentración de formaldehído en partes por millón (ppm)" },
   { key: "vocs", valor: 104, unidad: "ppm", nombre: "TVOC", info: "Índice de compuestos orgánicos volátiles totales" },
   { key: "pm1", valor: 2, unidad: "μg/m³", nombre: "PM1.0", info: "Partículas en suspensión con diámetro menor a 1.0 micrómetros" },
   { key: "pm25", valor: 2, unidad: "μg/m³", nombre: "PM2.5", info: "Partículas en suspensión con diámetro menor a 2.5 micrómetros" },
   { key: "pm4", valor: 2, unidad: "μg/m³", nombre: "PM4.0", info: "Partículas en suspensión con diámetro menor a 4.0 micrómetros" },
   { key: "pm10", valor: 2, unidad: "μg/m³", nombre: "PM10", info: "Partículas en suspensión con diámetro menor a 10 micrómetros" },
-  { key: "co", valor: 0, unidad: "ppm", nombre: "CO", info: "Concentración de ozono en partes por billón" },
-  { key: "no2", valor: 0, unidad: "ppm", nombre: "NO₂", info: "Concentración de dióxido de nitrógeno en partes por billón" },
-  { key: "o3", valor: 0, unidad: "ppm", nombre: "O₃", info: "Concentración de ozono en partes por billón" },
+  { key: "co", valor: 0, unidad: "ppm", nombre: "CO", info: "Concentración de monóxido de carbono en partes por millón (ppm)" },
+  { key: "no2", valor: 0, unidad: "ppm", nombre: "NO₂", info: "Concentración de dióxido de nitrógeno en partes por millón (ppm)" },
+  { key: "o3", valor: 0, unidad: "ppm", nombre: "O₃", info: "Concentración de ozono en partes por millón (ppm)" },
 ]
 
 const Parametros: React.FC<ParametrosProps> = ({ id }) => {
@@ -39,6 +39,7 @@ const Parametros: React.FC<ParametrosProps> = ({ id }) => {
   const [loading, setLoading] = useState(true)
   const [updateTime, setUpdateTime] = useState<string | null>(null)
   const inFlightControllerRef = useRef<AbortController | null>(null)
+  const initializedRef = useRef(false)
 
   // Función para mapear colores hexadecimales a clases de color
   const hexToColorClass = (hexColor: string): "success" | "warning" | "dangerous" => {
@@ -47,6 +48,8 @@ const Parametros: React.FC<ParametrosProps> = ({ id }) => {
         return "success"
       case "#eab308":
         return "warning"
+      case "#ef4444":
+        return "dangerous"
       default:
         return "dangerous"
     }
@@ -62,7 +65,7 @@ const Parametros: React.FC<ParametrosProps> = ({ id }) => {
       const ac = new AbortController()
       inFlightControllerRef.current = ac
       try {
-        setLoading(true)
+        if (!initializedRef.current) setLoading(true)
         const response = await fetch(`/api/registro/get/${id}/last`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
@@ -77,10 +80,14 @@ const Parametros: React.FC<ParametrosProps> = ({ id }) => {
           setUpdateTime(new Date(year, month - 1, day, hours, minutes, seconds).toLocaleString())
         }
         const nuevosParametros = parametrosIniciales.map((parametro) => {
-          const valor = ultimoRegistro[parametro.key] ?? parametro.valor
+          const valorBase = ultimoRegistro?.[parametro.key] ?? parametro.valor
+          let valor = valorBase
           let unidad = parametro.unidad
           if (["formaldehyde", "co", "o3", "no2"].includes(parametro.key)) {
             unidad = "ppm"
+            if (ultimoRegistro?.[parametro.key] === undefined && parametro.unidad === "ppb") {
+              valor = typeof valorBase === "number" ? valorBase / 1000 : valorBase
+            }
           }
           return { ...parametro, valor, unidad }
         })
@@ -91,12 +98,13 @@ const Parametros: React.FC<ParametrosProps> = ({ id }) => {
           color: hexToColorClass(colores[p.key]),
         }))
         setParametros(conColor)
+        if (!initializedRef.current) initializedRef.current = true
       } catch (error: any) {
         if (error?.name !== "AbortError") {
           console.error("Error obteniendo los parámetros:", error)
         }
       } finally {
-        if (!inFlightControllerRef.current?.signal.aborted) {
+        if (!inFlightControllerRef.current?.signal.aborted && !initializedRef.current) {
           setLoading(false)
         }
       }
