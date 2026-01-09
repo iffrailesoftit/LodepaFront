@@ -91,7 +91,8 @@ export async function BajaHospital(formData: FormData) {
    LEFT JOIN dispositivos d ON s.id = d.sala
    SET 
      s.fecha_baja = NOW(),
-     d.encendido = "N"
+     d.encendido = "N",
+     d.referencia = CONCAT(d.referencia, "_", CURDATE())
    WHERE s.hospital = ?`,
       [id]
     );

@@ -139,6 +139,7 @@ export async function BajaSala(formData: FormData) {
     await conn.query(
       `UPDATE dispositivos 
         set encendido = "N"
+        ,referencia = CONCAT(referencia, "_", CURDATE())
        WHERE sala = ?`,
       [id]
     );

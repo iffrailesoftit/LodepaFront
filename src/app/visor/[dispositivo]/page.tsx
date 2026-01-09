@@ -195,6 +195,6 @@ export default function VisorDispositivo() {
       )}
       </div>
     </div>
-  </>  
+  </>
   );
 }

@@ -29,8 +29,9 @@ export default function AltaSalaModal({ sala, hospital }: AltaSalaModalProps) {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         try {
-            if(hospital.fecha_baja){
-                toast.error("Hospital no ha sido dado de alta");
+            console.log(hospital[0].fecha_baja);
+            if(hospital[0].fecha_baja){
+                toast.error("Hospital de la sala no ha sido dado de alta");
                 return;
             }
             const formData = new FormData();

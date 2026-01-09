@@ -10,8 +10,8 @@ import { useRouter } from "next/navigation";
 
 
 export default function ReingresoHospitalModal({ hospital }: { hospital: Hospital }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const router = useRouter();
+    const [isOpen, setIsOpen] = useState(false);
+    const router = useRouter();
 
     useEffect(() => {
         if (isOpen) {
@@ -38,8 +38,8 @@ export default function ReingresoHospitalModal({ hospital }: { hospital: Hospita
 
     return (
         <>
-            <button 
-                onClick={() => setIsOpen(true)} 
+            <button
+                onClick={() => setIsOpen(true)}
                 className="bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded flex items-center justify-center transition-colors">
                 <CircleFadingPlus className="h-4 w-4 mr-1" />
                 Alta
@@ -52,16 +52,16 @@ export default function ReingresoHospitalModal({ hospital }: { hospital: Hospita
                                 <AlertTriangle className="h-6 w-6 text-red-500 mr-3" />
                                 <h2 className="text-xl font-bold text-gray-800">Dar de Alta Hospital</h2>
                             </div>
-                            <button 
-                                onClick={() => setIsOpen(false)} 
-                                className="text-gray-500 hover:text-gray-700 transition-colors" 
+                            <button
+                                onClick={() => setIsOpen(false)}
+                                className="text-gray-500 hover:text-gray-700 transition-colors"
                                 aria-label="Cerrar">
                                 <X className="h-6 w-6" />
                             </button>
                         </div>
                         <div className="py-6">
                             <p className="text-gray-600 mb-6">
-                                ¿Estás seguro de que deseas dar de alta a <span className="font-semibold text-gray-900">{hospital.hospital}</span>? Esta acción no se puede deshacer.
+                                ¿Estás seguro de que deseas dar de alta a <span className="font-semibold text-gray-900">{hospital.hospital}</span>? <span className="font-semibold text-gray-900">Recuerda modificar las referencias de los dispositivos.</span>
                             </p>
                             <form onSubmit={handleSubmit} className="flex justify-end space-x-3">
                                 <button

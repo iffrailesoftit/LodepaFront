@@ -36,6 +36,11 @@ export default function CambiarEstadoDip({ sala }: CambiarEstadoDipProps) {
   const isActive = encendido === "S";
 
   const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+
+    if (sala.fecha_baja) {
+      toast.error("No se puede cambiar el estado de un dispositivo de una sala dada de baja.");
+      return;
+    }
     const nuevo = e.target.value;
     setIsLoading(true);
 
@@ -75,10 +80,9 @@ export default function CambiarEstadoDip({ sala }: CambiarEstadoDipProps) {
         disabled={isLoading}
         className={`
           appearance-none cursor-pointer rounded-full px-3 py-1 text-sm font-medium transition-all duration-200
-          ${
-            (encendido === "S")
-              ? "bg-green-100 text-green-800 border-2 border-green-200 hover:bg-green-200 pr-7"
-              : "bg-gray-100 text-gray-600 border-2 border-gray-200 hover:bg-gray-200 pr-7"
+          ${(encendido === "S")
+            ? "bg-green-100 text-green-800 border-2 border-green-200 hover:bg-green-200 pr-7"
+            : "bg-gray-100 text-gray-600 border-2 border-gray-200 hover:bg-gray-200 pr-7"
           }
           ${isLoading ? "opacity-50 cursor-not-allowed" : ""}
           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
