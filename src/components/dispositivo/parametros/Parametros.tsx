@@ -104,9 +104,10 @@ const Parametros: React.FC<ParametrosProps> = ({ id }) => {
           console.error("Error obteniendo los parámetros:", error)
         }
       } finally {
-        if (!inFlightControllerRef.current?.signal.aborted && !initializedRef.current) {
-          setLoading(false)
-        }
+        // if (!inFlightControllerRef.current?.signal.aborted && !initializedRef.current) {
+        //   setLoading(false)
+        // }
+        setLoading(false)
       }
     }
 
