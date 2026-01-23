@@ -21,6 +21,19 @@ export async function getHospitalAll(): Promise<Hospital[]> {
   }
 }
 
+export async function getHospitalAllActive(): Promise<Hospital[]> {
+  try {
+    const [rows] = await executeQuery<Hospital[] & RowDataPacket[]>(
+      `SELECT * FROM hospitales WHERE fecha_baja IS NULL ORDER BY hospital ASC;`
+    );
+    return rows;
+  } catch (error) {
+    console.error("Error al obtener roles:", error);
+    throw new Error("No se pudieron obtener los roles");
+  }
+}
+
+
 export async function getHospitalByID(id: number): Promise<Hospital> {
   try {
     const rows = await executeQuery<Hospital & RowDataPacket[]>(
@@ -54,7 +67,7 @@ export async function getHospitalByUser(userID:number): Promise<Hospital[]> {
     const [rows] = await executeQuery<Hospital[] & RowDataPacket[]>(
       `SELECT h.* FROM hospitales h
       JOIN usuarios_hospitales uh ON h.id=uh.hospital_id
-      WHERE uh.usuario_id = ?;`,[userID]
+      WHERE uh.usuario_id = ? AND h.fecha_baja IS NULL;`,[userID]
     );
     return rows;
   } catch (error) {

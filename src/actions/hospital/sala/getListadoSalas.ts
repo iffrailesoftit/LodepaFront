@@ -65,8 +65,7 @@ LEFT JOIN registros r ON d.id = r.dispositivo
     FROM registros r2
     WHERE r2.dispositivo = d.id
   )
-WHERE us.usuario_id = ?
-  AND s.hospital = ?;`,
+WHERE us.usuario_id = ? AND s.hospital = ? AND s.fecha_baja IS NULL;`,
         [id, id_hospital]
       );
     } else {
@@ -100,7 +99,7 @@ WHERE us.usuario_id = ?
              FROM registros r2
              WHERE r2.dispositivo = d.id
            )
-         WHERE s.hospital = ?;`,
+         WHERE s.hospital = ? AND s.fecha_baja IS NULL;`,
         [id_hospital]
       );
     }
