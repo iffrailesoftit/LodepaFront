@@ -12,7 +12,10 @@ interface SalaProps {
 }
 
 export default function EditarSala({ sala, hospital }: SalaProps) {
-    const idhospital = hospital.id_hospital;
+    const idhospital = hospital[0]?.id;
+
+    // console.log("hospital", hospital)
+    // console.log("hospital_id", idhospital)
     const [formData, setFormData] = useState({
         id: sala.id_sala,
         id_hospital: idhospital,
