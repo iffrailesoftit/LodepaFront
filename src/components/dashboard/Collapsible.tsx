@@ -1,6 +1,6 @@
 "use client";
 import { ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import BadgeList from "./BadgeList";
 import { Hospital } from "@/actions/hospital/getHospital";
 import { ListadoSalas } from "@/actions/hospital/sala/getListadoSalas";
@@ -9,6 +9,14 @@ export default function CollapsibleTree({ hospitals, id, rol }: { hospitals: Hos
   const [expandedHospitals, setExpandedHospitals] = useState<number[]>([]);
   // Permitir null para indicar que se está cargando
   const [roomsData, setRoomsData] = useState<{ [key: number]: ListadoSalas[] | null }>({});
+
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredHospitals = useMemo(() => {
+    return hospitals.filter((hospital) =>
+      hospital.hospital.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [hospitals, searchTerm]);
 
   const toggleHospital = async (hospitalId: number) => {
     if (expandedHospitals.includes(hospitalId)) {
@@ -35,8 +43,21 @@ export default function CollapsibleTree({ hospitals, id, rol }: { hospitals: Hos
   };
 
   return (
-    <>
-      {hospitals.map((hospital: Hospital) => (
+    <div className="w-full">
+      {/* Search Bar */}
+      {rol === 1 && (
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Buscar hospital..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      )}
+
+      {filteredHospitals.map((hospital: Hospital) => (
         <div key={hospital.id} className="mb-2">
           {/* Nivel del Hospital */}
           <button
@@ -64,6 +85,6 @@ export default function CollapsibleTree({ hospitals, id, rol }: { hospitals: Hos
           )}
         </div>
       ))}
-    </>
+    </div>
   );
 }

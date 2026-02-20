@@ -43,7 +43,7 @@ const parameterOptions = [
 ]
 
 // Parámetros que necesitan conversión de ppb a ppm (dividir por 1000)
-const parametersToConvert = ["formaldehyde", "o3", "no2","vocs"]
+const parametersToConvert = ["formaldehyde", "o3", "no2", "vocs"]
 
 // Opciones para el selector de rango de tiempo
 const timeRangeOptions = [
@@ -178,12 +178,12 @@ export function Grafica({ id }: GraficaProps) {
   // Envolvemos loadThresholds en useCallback para mantener su referencia estable
   const loadThresholds = useCallback(async () => {
     try {
-      const thresholdData = await getParameterThresholds(parameter,id)
+      const thresholdData = await getParameterThresholds(parameter, id)
       setThresholds(thresholdData)
     } catch (err) {
       console.error("Error al cargar los umbrales:", err)
     }
-  }, [parameter,id])
+  }, [parameter, id])
 
   // Cargar los umbrales cuando cambia el parámetro
   useEffect(() => {
@@ -208,14 +208,14 @@ export function Grafica({ id }: GraficaProps) {
     try {
       setLoading(true)
       setError(null)
-      
+
       // Si estamos usando fechas personalizadas, pasarlas a la función
       // Si no, pasar null para que la función use el rango de tiempo
       const customStartDate = useCustomDates ? startDate.toISOString() : undefined
       const customEndDate = useCustomDates ? endDate.toISOString() : undefined
 
       const data = await getGraphicsData(id, parameter, timeRange, customStartDate, customEndDate)
-      
+
       // Convertir valores de ppb a ppm para formaldehído, O₃ y NO₂
       if (parametersToConvert.includes(parameter)) {
         // Convertir los valores de los datos
@@ -226,7 +226,7 @@ export function Grafica({ id }: GraficaProps) {
             newValue = newValue * 300; // Aplicar reducción del 15%
           }*/
           if (parameter === "formaldehyde") {
-            newValue = newValue ; // Aplicar reducción del 15%
+            newValue = newValue; // Aplicar reducción del 15%
           }
 
           // Limitar a 3 decimales
@@ -241,7 +241,7 @@ export function Grafica({ id }: GraficaProps) {
         // Actualizar los valores estadísticos
         let convertedMin = data.min / 1000;
         let convertedMax = data.max / 1000;
-        let  convertedMed = data.med / 1000;
+        let convertedMed = data.med / 1000;
 
         /*if (parameter === "vocs") {
           convertedMin = convertedMin * 300; // Aplicar reducción del 15%
@@ -249,9 +249,9 @@ export function Grafica({ id }: GraficaProps) {
           convertedMed = convertedMed * 300; // Aplicar reducción del 15%
         }*/
         if (parameter === "formaldehyde") {
-          convertedMin = convertedMin ; // Aplicar reducción del 15%
-          convertedMax = convertedMax ; // Aplicar reducción del 15%
-          convertedMed = convertedMed ; // Aplicar reducción del 15%
+          convertedMin = convertedMin; // Aplicar reducción del 15%
+          convertedMax = convertedMax; // Aplicar reducción del 15%
+          convertedMed = convertedMed; // Aplicar reducción del 15%
         }
         // Si es formaldehído, reducir un 15% adicional
 
@@ -276,7 +276,7 @@ export function Grafica({ id }: GraficaProps) {
             setCurrentValueStatus(statusColor)
           } else {
             // Si no hay umbrales, usar la función del servidor
-            const statusColor = await getStatus(parameter, lastValue,id)
+            const statusColor = await getStatus(parameter, lastValue, id)
             setCurrentValueStatus(statusColor)
           }
         }
@@ -291,7 +291,7 @@ export function Grafica({ id }: GraficaProps) {
             setCurrentValueStatus(statusColor)
           } else {
             // Si no hay umbrales, usar la función del servidor
-            const statusColor = await getStatus(parameter, lastValue,id)
+            const statusColor = await getStatus(parameter, lastValue, id)
             setCurrentValueStatus(statusColor)
           }
         }
@@ -521,7 +521,7 @@ export function Grafica({ id }: GraficaProps) {
           </span>
         </div>
 
-      {/* Indicadores de valores , incluimos también el warnign max y el danger max*/}
+        {/* Indicadores de valores , incluimos también el warnign max y el danger max*/}
         {graphData && (
           <div className="flex flex-wrap gap-3 mb-6">
             <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium">
@@ -584,36 +584,36 @@ export function Grafica({ id }: GraficaProps) {
                     tickMargin={10}
                   />
                   <YAxis
-  domain={[
-    (dataMin: number) => {
-      if (displayThresholds) {
-        const baseMin =   dataMin;//Math.min(dataMin, displayThresholds.min_warning);
-        // Si la diferencia entre dataMin y min_warning es muy grande,
-        // podrías ignorar o reducir el peso de min_warning para no "aplastar" los datos.
-        // Aquí agregamos un padding mínimo, por ejemplo 0.1,
-        // o adaptado a la escala real de tu parámetro:
-        //ajustamos a un 10 % por debajo del min, si eso lo hace bajar de cero lo dejamos en cero
-        const padding = Math.abs(baseMin) * 0.2;
-        
-        const valor= baseMin - padding;
-        return Math.round(valor * 10000) / 10000;
-      }
-      return dataMin;
-      //return 10;
-    },
-    (dataMax: number) => {
-      if (displayThresholds) {
-        const baseMax = dataMax;//Math.max(dataMax, displayThresholds.max_warning);
-        // Similar al mínimo, se añade un padding calculado o fijo:
-        const padding = Math.abs(baseMax) * 0.2;
-        const valor= baseMax + padding;
-        return Math.round(valor * 10000) / 10000;
-      }
-      return dataMax;
-      //return 100;
-    },
-  ]}
-/>
+                    domain={[
+                      (dataMin: number) => {
+                        if (displayThresholds) {
+                          const baseMin = dataMin;//Math.min(dataMin, displayThresholds.min_warning);
+                          // Si la diferencia entre dataMin y min_warning es muy grande,
+                          // podrías ignorar o reducir el peso de min_warning para no "aplastar" los datos.
+                          // Aquí agregamos un padding mínimo, por ejemplo 0.1,
+                          // o adaptado a la escala real de tu parámetro:
+                          //ajustamos a un 10 % por debajo del min, si eso lo hace bajar de cero lo dejamos en cero
+                          const padding = Math.abs(baseMin) * 0.2;
+
+                          const valor = baseMin - padding;
+                          return Math.round(valor * 10000) / 10000;
+                        }
+                        return dataMin;
+                        //return 10;
+                      },
+                      (dataMax: number) => {
+                        if (displayThresholds) {
+                          const baseMax = dataMax;//Math.max(dataMax, displayThresholds.max_warning);
+                          // Similar al mínimo, se añade un padding calculado o fijo:
+                          const padding = Math.abs(baseMax) * 0.2;
+                          const valor = baseMax + padding;
+                          return Math.round(valor * 10000) / 10000;
+                        }
+                        return dataMax;
+                        //return 100;
+                      },
+                    ]}
+                  />
                   <CartesianGrid strokeDasharray="3 3" vertical={false} />
 
                   {/* Líneas de referencia para los umbrales */}

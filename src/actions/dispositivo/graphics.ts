@@ -399,7 +399,7 @@ export async function getGraphicsData(
     }
 
     // Calcular valores estadísticos
-    const values = dataPoints.map((point) => point.value)
+    const values = dataPoints.map((point) => point.value).filter((v) => Number.isFinite(v))
     const min = Math.min(...values)
     const max = Math.max(...values)
     const med = values.reduce((sum, val) => sum + val, 0) / values.length
