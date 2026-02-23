@@ -150,6 +150,48 @@ function getStatusColor(value: number, thresholds: ParameterThresholds): string 
 }
 
 export function Grafica({ id }: GraficaProps) {
+
+  const chartRef = useRef<HTMLDivElement>(null)
+
+  async function exportChartToPNG() {
+    if (!chartRef.current) return null
+
+    const svg = chartRef.current.querySelector("svg")
+    if (!svg) return null
+
+    const serializer = new XMLSerializer()
+    const svgString = serializer.serializeToString(svg)
+
+    const blob = new Blob([svgString], {
+      type: "image/svg+xml;charset=utf-8",
+    })
+
+    const url = URL.createObjectURL(blob)
+    const img = new Image()
+
+    return new Promise<string>((resolve) => {
+      img.onload = () => {
+        const scale = 3 // 🔥 más grande = más calidad en PDF
+
+        const canvas = document.createElement("canvas")
+        canvas.width = img.width * scale
+        canvas.height = img.height * scale
+
+        const ctx = canvas.getContext("2d")
+        if (!ctx) return resolve("")
+
+        ctx.setTransform(scale, 0, 0, scale, 0, 0)
+        ctx.drawImage(img, 0, 0)
+
+        URL.revokeObjectURL(url)
+
+        resolve(canvas.toDataURL("image/png"))
+      }
+
+      img.src = url
+    })
+  }
+
   // Estados para los selectores y fechas
   const [parameter, setParameter] = useState<ParameterType>("temperature")
   const [timeRange, setTimeRange] = useState<TimeRange>("24h")
@@ -550,7 +592,7 @@ export function Grafica({ id }: GraficaProps) {
         )}
 
         {/* Gráfica */}
-        <div className="h-[350px] md:h-[400px] w-full my-4">
+        <div ref={chartRef} className="h-[350px] md:h-[400px] w-full my-4">
           {loading ? (
             <div className="h-full w-full flex items-center justify-center">
               <p>Cargando datos...</p>
@@ -559,7 +601,7 @@ export function Grafica({ id }: GraficaProps) {
             <div className="h-full w-full flex items-center justify-center">
               <p className="text-red-500">{error}</p>
             </div>
-          ) : graphData ? (
+          ) : graphData && displayThresholds ? (
             <ChartContainer
               config={{
                 value: {
@@ -614,27 +656,6 @@ export function Grafica({ id }: GraficaProps) {
                       },
                     ]}
                   />
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-
-                  {/* Líneas de referencia para los umbrales */}
-                  {displayThresholds && (
-                    <>
-                      <ReferenceLine
-                        y={displayThresholds.min_warning}
-                        stroke="#eab308"
-                        strokeDasharray="3 3"
-                        ifOverflow="extendDomain"
-                        label="Min Warning"
-                      />
-                      <ReferenceLine
-                        y={displayThresholds.max_warning}
-                        stroke="#ef4444"
-                        strokeDasharray="3 3"
-                        ifOverflow="extendDomain"
-                        label="Max Warning"
-                      />
-                    </>
-                  )}
 
                   <ChartTooltip
                     content={({ active, payload, label }) => {
@@ -685,6 +706,8 @@ export function Grafica({ id }: GraficaProps) {
                       return null
                     }}
                   />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+
                   <Area
                     type="monotone"
                     dataKey="value"
@@ -695,11 +718,62 @@ export function Grafica({ id }: GraficaProps) {
                     fill="url(#colorValue)"
                     strokeWidth={2}
                   />
+                  {/* Líneas de referencia para los umbrales */}
+
+                  <ReferenceLine
+                    y={displayThresholds.min_good}
+                    stroke="#eab308"
+                    // strokeDasharray="6 4"
+                    ifOverflow="extendDomain"
+                    // label={displayThresholds.min_warning}
+                    isFront={true}
+                  />
+
+                  <ReferenceLine
+                    y={displayThresholds.max_good}
+                    stroke="#eab308"
+                    // strokeDasharray="6 4"
+                    ifOverflow="extendDomain"
+                    // label={displayThresholds.min_warning}
+                    isFront={true}
+                  />
+
+                  <ReferenceLine
+                    y={displayThresholds.min_warning}
+                    stroke="#ef4444"
+                    // strokeDasharray="6 4"
+                    ifOverflow="extendDomain"
+                    // label={displayThresholds.max_warning}
+                    isFront={true}
+                  />
+                  <ReferenceLine
+                    y={displayThresholds.max_warning}
+                    stroke="#ef4444"
+                    // strokeDasharray="6 4"
+                    ifOverflow="extendDomain"
+                    // label={displayThresholds.max_warning}
+                    isFront={true}
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </ChartContainer>
           ) : null}
         </div>
+
+        <Button
+          className="mt-4"
+          onClick={async () => {
+            const image = await exportChartToPNG()
+            if (!image) return
+
+            const link = document.createElement("a")
+            link.href = image
+            link.download = `grafica-${parameter}.png`
+            link.click()
+          }}
+        >
+          Descargar PNG
+        </Button>
 
         {/* Última actualización */}
         <div className="mt-6 text-sm text-muted-foreground">

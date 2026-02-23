@@ -89,7 +89,28 @@ function transformData(rows: any[]) {
     ];
   }
   
-  
+  export interface HospitalSala {
+    id_hospital: number;
+    hospital: string;
+    id_sala: number;
+    n_sala: string;
+  }
+
+
+  export async function getListadoHospitalSalas(): Promise<HospitalSala[]> {
+  try {
+    const [rows] = await executeQuery(
+      `SELECT h.id AS id_hospital, h.hospital, s.id AS id_sala, s.n_sala
+       FROM hospitales h
+       JOIN salas s ON h.id = s.hospital
+       WHERE h.fecha_baja IS NULL AND s.fecha_baja IS NULL;`
+    )
+    return rows as HospitalSala[]
+  } catch (error) {
+    console.error("Error al obtener datos:", error)
+    return []
+  }
+}
   export async function getListado(id:number,rol: number) {
     try {
       // Ejecutar la consulta SQL segun el Rol
