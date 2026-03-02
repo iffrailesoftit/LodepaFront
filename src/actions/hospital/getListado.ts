@@ -94,15 +94,18 @@ function transformData(rows: any[]) {
     hospital: string;
     id_sala: number;
     n_sala: string;
+    id_dispositivo: number;
+    n_dispositivo: string;
   }
 
 
   export async function getListadoHospitalSalas(): Promise<HospitalSala[]> {
   try {
     const [rows] = await executeQuery(
-      `SELECT h.id AS id_hospital, h.hospital, s.id AS id_sala, s.n_sala
+      `SELECT h.id AS id_hospital, h.hospital, s.id AS id_sala, s.n_sala, d.id AS id_dispositivo, d.n_dispositivo
        FROM hospitales h
        JOIN salas s ON h.id = s.hospital
+       JOIN dispositivos d ON s.id = d.sala
        WHERE h.fecha_baja IS NULL AND s.fecha_baja IS NULL;`
     )
     return rows as HospitalSala[]

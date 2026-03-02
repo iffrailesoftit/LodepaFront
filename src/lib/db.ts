@@ -1,21 +1,29 @@
 // lib/db.ts
 import mysql from 'mysql2/promise';
 
-const db = mysql.createPool({
-  host: process.env.MYSQL_HOST, // Dirección del servidor MySQL
-  user: process.env.MYSQL_USER, // Usuario
-  password: process.env.MYSQL_PASSWORD, // Contraseña
-  database: process.env.MYSQL_DATABASE, // Nombre de la base de datos
-  port: parseInt(process.env.MYSQL_PORT || '3306'), // Puerto del servidor MySQL
+const poolConfig = {
+  host: process.env.MYSQL_HOST,
+  user: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASSWORD,
+  database: process.env.MYSQL_DATABASE,
+  port: parseInt(process.env.MYSQL_PORT || '3306'),
   waitForConnections: true,
-  connectionLimit: 10, // Número máximo de conexiones simultáneas
-  queueLimit: 0, // Sin límite de cola
-});
+  connectionLimit: 10,
+  queueLimit: 0,
+};
 
+// Singleton pattern for the database pool in Next.js development mode
+const globalForDb = global as unknown as { db: mysql.Pool | undefined };
+
+export const db = globalForDb.db ?? mysql.createPool(poolConfig);
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForDb.db = db;
+}
 
 // Función para ejecutar una consulta y liberar la conexión después
 export async function executeQuery<T = any>(
-  query: string, 
+  query: string,
   params?: any[]
 ): Promise<T[]>  {
   const connection = await db.getConnection();

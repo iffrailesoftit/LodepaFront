@@ -191,7 +191,7 @@ export async function getGraphicsData(
 
             // Solo mostrar logs para la primera y última fila, y cada 20 filas
             if (i === 0 || i === rows.length - 1 || i % 20 === 0) {
-              console.log(`Procesando fila ${i}/${rows.length}:`, { timestamp, value })
+              // console.log(`Procesando fila ${i}/${rows.length}:`, { timestamp, value })
             }
 
             if (timestamp && value !== undefined) {
@@ -243,7 +243,7 @@ export async function getGraphicsData(
 
             // Solo mostrar logs para la primera y última fila, y cada 20 filas
             if (i === 0 || i === result.length - 1 || i % 20 === 0) {
-              console.log(`Procesando fila ${i}/${result.length}:`, { timestamp, value })
+              // console.log(`Procesando fila ${i}/${result.length}:`, { timestamp, value })
             }
 
             if (timestamp && value !== undefined) {
@@ -349,7 +349,7 @@ export async function getGraphicsData(
         const timestamp = row.update_time
         const value = row[parameter]
 
-        console.log("Procesando fila única:", { timestamp, value })
+        // console.log("Procesando fila única:", { timestamp, value })
 
         if (timestamp && value !== undefined) {
           try {

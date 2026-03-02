@@ -221,7 +221,16 @@ export function Grafica({ id }: GraficaProps) {
   const loadThresholds = useCallback(async () => {
     try {
       const thresholdData = await getParameterThresholds(parameter, id)
-      setThresholds(thresholdData)
+      if (parameter === "iaq" || parameter === "thermal_indicator" || parameter === "ventilation_indicator" || parameter === "covid19") {
+        setThresholds({
+          min_good: 0,
+          max_good: 0,
+          min_warning: 0,
+          max_warning: 0,
+        })
+      } else {
+        setThresholds(thresholdData)
+      }
     } catch (err) {
       console.error("Error al cargar los umbrales:", err)
     }

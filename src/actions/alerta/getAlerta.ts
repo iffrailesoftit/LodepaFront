@@ -18,6 +18,15 @@ export interface Alerta extends RowDataPacket {
     hospital:string;
 }
 
+export interface AlertaBySala extends RowDataPacket {
+    id: number;
+    sala_id: number;
+    alerta: string;
+    campo: string;
+    valor: number;
+    fecha: Date;
+}
+
 export async function getAlertaByUsuario(id: number,rol: number): Promise<Alerta[]> {
     try {
 
@@ -25,7 +34,7 @@ export async function getAlertaByUsuario(id: number,rol: number): Promise<Alerta
         // CONTROL DE PERSMISOS
         if(rol === 1){
             const [rows] = await executeQuery<Alerta[] & RowDataPacket[]>(
-                `SELECT 
+                `SELECT
                     MIN(a.id) AS id,
                     a.sala_id,
                     a.campo,
@@ -40,7 +49,7 @@ export async function getAlertaByUsuario(id: number,rol: number): Promise<Alerta
                     FROM alertas a
                                         JOIN salas s ON a.sala_id = s.id
                                         JOIN hospitales h ON s.hospital = h.id
-                    GROUP BY 
+                    GROUP BY
                     a.sala_id,
                     a.alerta,
                     a.campo,
@@ -66,6 +75,24 @@ export async function getAlertaByUsuario(id: number,rol: number): Promise<Alerta
         request= rows;
     }
         return request;
+    } catch (error) {
+        console.error("Error al obtener roles:", error);
+        throw new Error("No se pudieron obtener los roles");
+    }
+}
+
+export async function getAlertaBySala(id: number, fechaInicio: string, fechaFin: string): Promise<AlertaBySala[]> {
+    try {
+        console.log("Alerta por sala: " + id, fechaInicio, fechaFin);
+        const [rows] = await executeQuery<AlertaBySala[] & RowDataPacket[]>(
+            `SELECT a.id, a.sala_id, a.alerta, a.campo, a.valor, a.fecha
+                FROM alertas a
+                WHERE a.sala_id = ?
+                AND a.fecha BETWEEN ? AND ?
+                ORDER BY a.fecha DESC
+                LIMIT 15;`, [id, fechaInicio, fechaFin]
+        );
+        return rows;
     } catch (error) {
         console.error("Error al obtener roles:", error);
         throw new Error("No se pudieron obtener los roles");
