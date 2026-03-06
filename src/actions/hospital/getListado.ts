@@ -92,6 +92,7 @@ function transformData(rows: any[]) {
   export interface HospitalSala {
     id_hospital: number;
     hospital: string;
+    logo: string;
     id_sala: number;
     n_sala: string;
     id_dispositivo: number;
@@ -102,7 +103,7 @@ function transformData(rows: any[]) {
   export async function getListadoHospitalSalas(): Promise<HospitalSala[]> {
   try {
     const [rows] = await executeQuery(
-      `SELECT h.id AS id_hospital, h.hospital, s.id AS id_sala, s.n_sala, d.id AS id_dispositivo, d.n_dispositivo
+      `SELECT h.id AS id_hospital, h.hospital, h.logo, s.id AS id_sala, s.n_sala, d.id AS id_dispositivo, d.n_dispositivo
        FROM hospitales h
        JOIN salas s ON h.id = s.hospital
        JOIN dispositivos d ON s.id = d.sala

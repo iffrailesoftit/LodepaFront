@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link";
+import Image from "next/image";
 import EditarHospital from "./modals/EditarHospital";
 import { useState, useEffect } from "react";
 import HospitalFilter from "./HospitalFilter";
@@ -72,11 +73,18 @@ export default function HospitalTable({ hospitales }: any) {
                     {currentHospitales.map((hospital: any) => (
                         <div key={hospital.id} className="bg-white rounded-lg shadow p-4 border border-gray-200">
                             <div className="flex justify-between items-center mb-2">
-                                <h3 className="font-medium text-gray-900">
-                                    <Link href={`/dashboard/admin/hospital/${hospital.id}/salas`} className="text-blue-600 hover:underline">
-                                        {hospital.hospital}
-                                    </Link>
-                                </h3>
+                                <div className="flex items-center space-x-3">
+                                    {hospital.logo ? (
+                                        <Image src={hospital.logo} alt={hospital.hospital} width={40} height={40} className="rounded-full object-cover" />
+                                    ) : (
+                                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-xs text-gray-500">N/A</div>
+                                    )}
+                                    <h3 className="font-medium text-gray-900">
+                                        <Link href={`/dashboard/admin/hospital/${hospital.id}/salas`} className="text-blue-600 hover:underline">
+                                            {hospital.hospital}
+                                        </Link>
+                                    </h3>
+                                </div>
                                 <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
                                     ID: {hospital.id}
                                 </span>
@@ -91,10 +99,10 @@ export default function HospitalTable({ hospitales }: any) {
                             <div className="mt-4 flex space-x-2">
                                 <EditarHospital hospital={hospital} />
                                 {!hospital.fecha_baja ? (
-                                            <BajaHospitalModal hospital={hospital} />
-                                        ) : (
-                                            <ReingresoHospitalModal hospital={hospital} />
-                                        )}
+                                    <BajaHospitalModal hospital={hospital} />
+                                ) : (
+                                    <ReingresoHospitalModal hospital={hospital} />
+                                )}
                             </div>
                         </div>
                     ))}
@@ -107,6 +115,7 @@ export default function HospitalTable({ hospitales }: any) {
                     <thead>
                         <tr className="bg-gray-100 text-gray-700">
                             <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">ID</th>
+                            <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Logo</th>
                             <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Nombre</th>
                             <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Numero de Salas</th>
                             <th className="border px-4 py-3 text-left text-xs font-medium uppercase tracking-wider">Fecha Baja</th>
@@ -118,11 +127,19 @@ export default function HospitalTable({ hospitales }: any) {
                             <tr key={hospital.id} className="hover:bg-gray-50">
                                 <td className="border px-4 py-2 text-sm">{hospital.id}</td>
                                 <td className="border px-4 py-2 text-sm">
+                                    {hospital.logo ? (
+                                        <Image src={hospital.logo} alt={hospital.hospital} width={50} height={50} className="object-contain" />
+                                    ) : (
+                                        <span className="text-gray-400 italic">Sin Logo</span>
+                                    )}
+                                </td>
+                                <td className="border px-4 py-2 text-sm">
                                     <Link href={`/dashboard/admin/hospital/${hospital.id}/salas`} className="text-blue-600 hover:underline">
                                         {hospital.hospital}
                                     </Link>
                                 </td>
                                 <td className="border px-4 py-2 text-sm">{hospital.num_salas}</td>
+
                                 <td className="border px-4 py-2 text-sm">
                                     <span className="font-medium">
                                         {hospital.fecha_baja

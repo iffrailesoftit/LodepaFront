@@ -11,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart"
 
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, ReferenceLine } from "recharts"
+import { Line, LineChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis, ReferenceLine, Customized } from "recharts"
 
 import {
   getGraphicsData,
@@ -22,6 +22,102 @@ import {
 
 import { getParameterThresholds, getStatus } from "@/actions/dispositivo/umbrales"
 
+function SegmentedLine({
+  points,
+  thresholds,
+  strokeWidth = 2,
+}: {
+  points?: Array<any>
+  thresholds: ParameterThresholds
+  strokeWidth?: number
+}) {
+  if (!points || !thresholds || points.length < 2) return null
+
+  const segments: Array<{
+    x1: number
+    y1: number
+    x2: number
+    y2: number
+    color: string
+    key: string
+  }> = []
+
+  for (let i = 0; i < points.length - 1; i++) {
+    const a = points[i]
+    const b = points[i + 1]
+
+    if (
+      a?.value == null ||
+      b?.value == null ||
+      a?.x == null ||
+      a?.y == null ||
+      b?.x == null ||
+      b?.y == null
+    ) {
+      continue
+    }
+
+    const start = { value: Number(a.value), timestamp: String(a.payload.timestamp) }
+    const end = { value: Number(b.value), timestamp: String(b.payload.timestamp) }
+
+    if (Number.isNaN(start.value) || Number.isNaN(end.value)) continue
+
+    const crossings = getThresholdCrossings(start.value, end.value, thresholds)
+
+    const pieces = [start]
+
+    for (const threshold of crossings) {
+      pieces.push(interpolateCrossing(start, end, threshold))
+    }
+
+    pieces.push(end)
+
+    for (let j = 0; j < pieces.length - 1; j++) {
+      const p1 = pieces[j]
+      const p2 = pieces[j + 1]
+
+      const ratio1 =
+        start.value === end.value ? 0 : (p1.value - start.value) / (end.value - start.value)
+      const ratio2 =
+        start.value === end.value ? 1 : (p2.value - start.value) / (end.value - start.value)
+
+      const x1 = a.x + (b.x - a.x) * ratio1
+      const y1 = a.y + (b.y - a.y) * ratio1
+      const x2 = a.x + (b.x - a.x) * ratio2
+      const y2 = a.y + (b.y - a.y) * ratio2
+
+      const midValue = (p1.value + p2.value) / 2
+      const band = getBandFromValue(midValue, thresholds)
+
+      segments.push({
+        x1,
+        y1,
+        x2,
+        y2,
+        color: getStrokeFromBand(band),
+        key: `${i}-${j}`,
+      })
+    }
+  }
+
+  return (
+    <g>
+      {segments.map((s) => (
+        <line
+          key={s.key}
+          x1={s.x1}
+          y1={s.y1}
+          x2={s.x2}
+          y2={s.y2}
+          stroke={s.color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          fill="none"
+        />
+      ))}
+    </g>
+  )
+}
 // Opciones para el selector de parámetros
 const parameterOptions = [
   { value: "temperature", label: "Temperatura (°C)" },
@@ -140,13 +236,194 @@ function calculateDateRange(timeRange: TimeRange): { startDate: Date; endDate: D
 
 // Función para obtener el color de estado según el valor y los umbrales
 function getStatusColor(value: number, thresholds: ParameterThresholds): string {
-  if (!thresholds) return "#22c55e" // Verde por defecto
+  if (!thresholds) return "#22c55e"
 
   const { min_good, max_good, min_warning, max_warning } = thresholds
 
-  if (value >= min_good && value <= max_good) return "#22c55e" // Verde
-  if (value >= min_warning && value <= max_warning) return "#eab308" // Amarillo
-  return "#ef4444" // Rojo
+  if (value >= min_good && value <= max_good) return "#22c55e"
+  if (value >= min_warning && value <= max_warning) return "#eab308"
+  return "#ef4444"
+}
+
+type SegmentedPoint = {
+  timestamp: string
+  value: number
+  greenValue: number | null
+  yellowValue: number | null
+  redValue: number | null
+}
+
+type BandColor = "green" | "yellow" | "red"
+
+function getBandFromValue(
+  value: number,
+  thresholds: ParameterThresholds
+): BandColor {
+  if (!thresholds) return "green"
+
+  const { min_good, max_good, min_warning, max_warning } = thresholds
+
+  if (value >= min_good && value <= max_good) return "green"
+  if (value >= min_warning && value <= max_warning) return "yellow"
+  return "red"
+}
+
+function getStrokeFromBand(band: BandColor) {
+  if (band === "green") return "#10b981"
+  if (band === "yellow") return "#eab308"
+  return "#ef4444"
+}
+
+function interpolateCrossing(
+  p1: { value: number; timestamp: string },
+  p2: { value: number; timestamp: string },
+  targetValue: number
+) {
+  const t1 = new Date(p1.timestamp).getTime()
+  const t2 = new Date(p2.timestamp).getTime()
+
+  if (p1.value === p2.value) {
+    return {
+      timestamp: p1.timestamp,
+      value: targetValue,
+    }
+  }
+
+  const ratio = (targetValue - p1.value) / (p2.value - p1.value)
+
+  return {
+    timestamp: new Date(t1 + (t2 - t1) * ratio).toISOString(),
+    value: targetValue,
+  }
+}
+
+function getThresholdCrossings(
+  v1: number,
+  v2: number,
+  thresholds: ParameterThresholds
+) {
+  if (!thresholds) return []
+
+  const all = [
+    thresholds.min_warning,
+    thresholds.min_good,
+    thresholds.max_good,
+    thresholds.max_warning,
+  ].filter((v, i, arr) => arr.indexOf(v) === i)
+
+  const min = Math.min(v1, v2)
+  const max = Math.max(v1, v2)
+
+  return all
+    .filter((t) => t > min && t < max)
+    .sort((a, b) => (v2 >= v1 ? a - b : b - a))
+}
+
+function buildPoint(
+  timestamp: string,
+  value: number,
+  band: "green" | "yellow" | "red"
+): SegmentedPoint {
+  return {
+    timestamp,
+    value,
+    greenValue: band === "green" ? value : null,
+    yellowValue: band === "yellow" ? value : null,
+    redValue: band === "red" ? value : null,
+  }
+}
+
+function interpolatePoint(
+  p1: { timestamp: string; value: number },
+  p2: { timestamp: string; value: number },
+  targetValue: number
+) {
+  const t1 = new Date(p1.timestamp).getTime()
+  const t2 = new Date(p2.timestamp).getTime()
+
+  if (p2.value === p1.value) {
+    return {
+      timestamp: p1.timestamp,
+      value: targetValue,
+    }
+  }
+
+  const ratio = (targetValue - p1.value) / (p2.value - p1.value)
+  const interpolatedTime = new Date(t1 + (t2 - t1) * ratio).toISOString()
+
+  return {
+    timestamp: interpolatedTime,
+    value: targetValue,
+  }
+}
+
+function getCrossedThresholds(
+  v1: number,
+  v2: number,
+  thresholds: ParameterThresholds
+): number[] {
+  if (!thresholds) return []
+
+  const candidates = [
+    thresholds.min_warning,
+    thresholds.min_good,
+    thresholds.max_good,
+    thresholds.max_warning,
+  ].filter((v, i, arr) => arr.indexOf(v) === i)
+
+  const min = Math.min(v1, v2)
+  const max = Math.max(v1, v2)
+
+  return candidates
+    .filter((t) => t > min && t < max)
+    .sort((a, b) => (v2 >= v1 ? a - b : b - a))
+}
+
+function buildSegmentedChartDataContinuous(
+  data: Array<{ timestamp: string; value: number }>,
+  thresholds: ParameterThresholds
+): SegmentedPoint[] {
+  if (!thresholds || data.length === 0) return []
+
+  const result: SegmentedPoint[] = []
+
+  for (let i = 0; i < data.length - 1; i++) {
+    const start = data[i]
+    const end = data[i + 1]
+
+    const crossed = getCrossedThresholds(start.value, end.value, thresholds)
+
+    let currentPoint = start
+    let currentBand = getBandFromValue(currentPoint.value, thresholds)
+
+    if (i === 0) {
+      result.push(buildPoint(currentPoint.timestamp, currentPoint.value, currentBand))
+    }
+
+    for (const threshold of crossed) {
+      const crossPoint = interpolatePoint(currentPoint, end, threshold)
+
+      result.push(buildPoint(crossPoint.timestamp, crossPoint.value, currentBand))
+
+      currentBand = getBandFromValue(
+        threshold + (end.value > start.value ? 0.000001 : -0.000001),
+        thresholds
+      )
+
+      const shiftedTimestamp = new Date(
+        new Date(crossPoint.timestamp).getTime() + 1
+      ).toISOString()
+
+      result.push(buildPoint(shiftedTimestamp, crossPoint.value, currentBand))
+
+      currentPoint = crossPoint
+    }
+
+    const endBand = getBandFromValue(end.value, thresholds)
+    result.push(buildPoint(end.timestamp, end.value, endBand))
+  }
+
+  return result
 }
 
 export function Grafica({ id }: GraficaProps) {
@@ -419,6 +696,11 @@ export function Grafica({ id }: GraficaProps) {
   // Usar los umbrales directamente sin conversión
   const displayThresholds = thresholds
 
+  const segmentedData =
+    graphData && displayThresholds
+      ? buildSegmentedChartDataContinuous(graphData.data, displayThresholds)
+      : []
+
   return (
     <Card className="w-full max-w-[1000px] mx-auto h-full overflow-hidden">
       <CardContent className="p-4 md:p-6 space-y-4 max-w-full">
@@ -621,149 +903,137 @@ export function Grafica({ id }: GraficaProps) {
               className="h-full"
             >
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={graphData.data} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                  <defs>
-                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
+                <LineChart data={segmentedData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+
                   <XAxis
                     dataKey="timestamp"
                     tickFormatter={(value) => formatXAxisTime(value, timeRange)}
                     tick={{ fontSize: 12 }}
                     tickMargin={10}
+                    minTickGap={20}
                   />
+
                   <YAxis
                     domain={[
                       (dataMin: number) => {
-                        if (displayThresholds) {
-                          const baseMin = dataMin;//Math.min(dataMin, displayThresholds.min_warning);
-                          // Si la diferencia entre dataMin y min_warning es muy grande,
-                          // podrías ignorar o reducir el peso de min_warning para no "aplastar" los datos.
-                          // Aquí agregamos un padding mínimo, por ejemplo 0.1,
-                          // o adaptado a la escala real de tu parámetro:
-                          //ajustamos a un 10 % por debajo del min, si eso lo hace bajar de cero lo dejamos en cero
-                          const padding = Math.abs(baseMin) * 0.2;
-
-                          const valor = baseMin - padding;
-                          return Math.round(valor * 10000) / 10000;
-                        }
-                        return dataMin;
-                        //return 10;
+                        const padding = Math.abs(dataMin || 1) * 0.15
+                        return Number((dataMin - padding).toFixed(4))
                       },
                       (dataMax: number) => {
-                        if (displayThresholds) {
-                          const baseMax = dataMax;//Math.max(dataMax, displayThresholds.max_warning);
-                          // Similar al mínimo, se añade un padding calculado o fijo:
-                          const padding = Math.abs(baseMax) * 0.2;
-                          const valor = baseMax + padding;
-                          return Math.round(valor * 10000) / 10000;
-                        }
-                        return dataMax;
-                        //return 100;
+                        const padding = Math.abs(dataMax || 1) * 0.15
+                        return Number((dataMax + padding).toFixed(4))
                       },
                     ]}
+                    tick={{ fontSize: 12 }}
                   />
 
                   <ChartTooltip
                     content={({ active, payload, label }) => {
-                      if (active && payload && payload.length) {
-                        const value = payload[0].value as number
-                        let statusColor = "#22c55e" // Verde por defecto el color de la r
+                      if (!active || !payload || !payload.length) return null
 
-                        // Determinar el color según los umbrales
-                        if (displayThresholds) {
-                          statusColor = getStatusColor(value, displayThresholds)
-                        }
+                      const validPayload = payload.find((item) => item.value != null)
+                      if (!validPayload) return null
 
-                        return (
-                          <div className="bg-background border rounded-md shadow-sm px-3 py-2 text-sm">
-                            <div className="font-medium">{formatDateTime(label)}</div>
-                            <div className="mt-1 flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-1">
-                                <div className="h-2 w-2 rounded-full" style={{ backgroundColor: statusColor }} />
-                                <span className="text-muted-foreground">{graphData.parameter}</span>
-                              </div>
-                              <div className="font-medium">
-                                {parameter === "vocs"
-                                  ? value.toFixed(1)
-                                  : parametersToConvert.includes(parameter)
-                                    ? value.toFixed(3)
-                                    : value.toFixed(1)
-                                }{" "}
-                                {graphData.unit}
-                              </div>
+                      const rawValue = validPayload.value
+                      const value = typeof rawValue === "number" ? rawValue : Number(rawValue)
+
+                      if (Number.isNaN(value)) return null
+                      const statusColor = displayThresholds
+                        ? getStatusColor(value, displayThresholds)
+                        : "#22c55e"
+
+                      return (
+                        <div className="bg-background border rounded-md shadow-sm px-3 py-2 text-sm">
+                          <div className="font-medium">{formatDateTime(label)}</div>
+
+                          <div className="mt-1 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1">
+                              <div className="h-2 w-2 rounded-full" style={{ backgroundColor: statusColor }} />
+                              <span className="text-muted-foreground">{graphData.parameter}</span>
                             </div>
-                            {displayThresholds && (
-                              <div className="mt-1 text-xs">
-                                <div className="text-muted-foreground">
-                                  Estado:
-                                  <span className="ml-1 font-medium" style={{ color: statusColor }}>
-                                    {statusColor === "#22c55e"
-                                      ? "Bueno"
-                                      : statusColor === "#eab308"
-                                        ? "Advertencia"
-                                        : "Peligro"}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
+
+                            <div className="font-medium">
+                              {parameter === "vocs"
+                                ? value.toFixed(1)
+                                : parametersToConvert.includes(parameter)
+                                  ? value.toFixed(3)
+                                  : value.toFixed(1)}{" "}
+                              {graphData.unit}
+                            </div>
                           </div>
-                        )
-                      }
-                      return null
+
+                          <div className="mt-1 text-xs text-muted-foreground">
+                            Estado:
+                            <span className="ml-1 font-medium" style={{ color: statusColor }}>
+                              {statusColor === "#22c55e"
+                                ? "Bueno"
+                                : statusColor === "#eab308"
+                                  ? "Advertencia"
+                                  : "Peligro"}
+                            </span>
+                          </div>
+                        </div>
+                      )
                     }}
                   />
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
 
-                  <Area
-                    type="monotone"
+                  <Line
+                    type="linear"
                     dataKey="value"
-                    name={graphData.parameter}
-                    unit={graphData.unit}
-                    stroke="#10b981"
-                    fillOpacity={1}
-                    fill="url(#colorValue)"
+                    stroke="transparent"
                     strokeWidth={2}
+                    dot={false}
+                    isAnimationActive={false}
+                    activeDot={{ r: 3 }}
                   />
-                  {/* Líneas de referencia para los umbrales */}
 
-                  <ReferenceLine
-                    y={displayThresholds.min_good}
-                    stroke="#eab308"
-                    // strokeDasharray="6 4"
-                    ifOverflow="extendDomain"
-                    // label={displayThresholds.min_warning}
-                    isFront={true}
+                  <Customized
+                    component={(props: any) => (
+                      <SegmentedLine
+                        points={props?.formattedGraphicalItems?.[0]?.props?.points}
+                        thresholds={displayThresholds}
+                        strokeWidth={1.8}
+                      />
+                    )}
                   />
+
+                  {displayThresholds.min_warning <= displayThresholds.min_good && (
+                    <ReferenceLine
+                      y={displayThresholds.min_good}
+                      stroke="#eab308"
+                      strokeWidth={1.2}
+                      ifOverflow="extendDomain"
+                      isFront={true}
+                    />
+                  )}
 
                   <ReferenceLine
                     y={displayThresholds.max_good}
                     stroke="#eab308"
-                    // strokeDasharray="6 4"
+                    strokeWidth={1.2}
                     ifOverflow="extendDomain"
-                    // label={displayThresholds.min_warning}
                     isFront={true}
                   />
 
-                  <ReferenceLine
-                    y={displayThresholds.min_warning}
-                    stroke="#ef4444"
-                    // strokeDasharray="6 4"
-                    ifOverflow="extendDomain"
-                    // label={displayThresholds.max_warning}
-                    isFront={true}
-                  />
+                  {displayThresholds.min_warning <= displayThresholds.min_good && (
+                    <ReferenceLine
+                      y={displayThresholds.min_warning}
+                      stroke="#ef4444"
+                      strokeWidth={1.2}
+                      ifOverflow="extendDomain"
+                      isFront={true}
+                    />
+                  )}
+
                   <ReferenceLine
                     y={displayThresholds.max_warning}
                     stroke="#ef4444"
-                    // strokeDasharray="6 4"
+                    strokeWidth={1.2}
                     ifOverflow="extendDomain"
-                    // label={displayThresholds.max_warning}
                     isFront={true}
                   />
-                </AreaChart>
+                </LineChart>
               </ResponsiveContainer>
             </ChartContainer>
           ) : null}

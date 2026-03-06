@@ -7,6 +7,7 @@ export interface Hospital extends RowDataPacket {
   id: number;
   hospital: string;
   fecha_baja: Date | null;
+  logo: string;
 }
 
 export async function getHospitalAll(): Promise<Hospital[]> {

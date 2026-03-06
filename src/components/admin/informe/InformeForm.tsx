@@ -38,6 +38,7 @@ interface Sala {
 interface Hospital {
     id_hospital: number
     hospital: string
+    logo: string
     salas: Sala[]
 }
 
@@ -49,6 +50,7 @@ function agruparHospitales(data: HospitalSala[]): Hospital[] {
             map.set(row.id_hospital, {
                 id_hospital: row.id_hospital,
                 hospital: row.hospital,
+                logo: row.logo,
                 salas: [],
             })
         }
@@ -348,12 +350,14 @@ export default function InformeForm({ data }: { data: HospitalSala[] }) {
                                     return
                                 }
 
+                                const contentType = res.headers.get("Content-Type")
+                                const extension = contentType === "application/zip" ? "zip" : "pdf"
                                 const blob = await res.blob()
                                 const url = URL.createObjectURL(blob)
 
                                 const a = document.createElement("a")
                                 a.href = url
-                                a.download = `informe-mensual-${new Date().toISOString().split('T')[0]}.pdf`
+                                a.download = `informes-lodepa-${new Date().toISOString().split('T')[0]}.${extension}`
                                 document.body.appendChild(a)
                                 a.click()
                                 a.remove()

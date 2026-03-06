@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Users, Building2, Menu, X } from "lucide-react"
+import { Users, Building2, Menu, X, FolderClosed } from "lucide-react"
 
 export default function AdminMenu() {
   const pathname = usePathname()
@@ -38,6 +38,11 @@ export default function AdminMenu() {
       label: "Gestión Hospital",
       icon: <Building2 className="h-5 w-5" />,
     },
+    {
+      href: "/dashboard/admin/informe",
+      label: "Informes",
+      icon: <FolderClosed className="h-5 w-5" />,
+    },
   ]
 
   return (
@@ -65,10 +70,9 @@ export default function AdminMenu() {
                   href={item.href}
                   className={`
                     flex items-center px-4 py-2 rounded-md transition-all duration-200
-                    ${
-                      isActive
-                        ? "bg-blue-600 text-white shadow-md"
-                        : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                    ${isActive
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
                     }
                   `}
                 >

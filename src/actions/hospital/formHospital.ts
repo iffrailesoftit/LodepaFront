@@ -2,18 +2,38 @@
 
 import { executeQuery, getConnection } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import fs from "fs/promises";
+import path from "path";
 // import { redirect } from "next/navigation";
 
 // Insertar Hospital
+// Insertar Hospital
 export async function crearHospital(formData: FormData) {
   const nombre = formData.get("Nombre") as string | null;
+  const logoFile = formData.get("Logo") as File | null;
+  let logoUrl = null;
 
   if (!nombre) {
     throw new Error("El nombre del hospital es requerido.");
   }
+
   try {
-    await executeQuery(`INSERT INTO hospitales (hospital) VALUES (?)`, [
+    if (logoFile && logoFile.size > 0) {
+      const buffer = Buffer.from(await logoFile.arrayBuffer());
+      const uniqueName = `${Date.now()}-${logoFile.name.replace(/\s+/g, "_")}`;
+      const uploadDir = path.join(process.cwd(), "public/uploads/logos");
+      
+      // Ensure directory exists
+      await fs.mkdir(uploadDir, { recursive: true });
+      
+      const filePath = path.join(uploadDir, uniqueName);
+      await fs.writeFile(filePath, buffer);
+      logoUrl = `/uploads/logos/${uniqueName}`;
+    }
+
+    await executeQuery(`INSERT INTO hospitales (hospital, logo) VALUES (?, ?)`, [
       nombre,
+      logoUrl,
     ]);
   } catch (error) {
     console.error("Error al crear el hospital:", error);
@@ -30,14 +50,35 @@ export async function crearHospital(formData: FormData) {
 export async function updateHospital(formData: FormData) {
   const id = formData.get("Id") as string | null;
   const nombre = formData.get("Nombre") as string | null;
+  const logoFile = formData.get("Logo") as File | null;
+  const keepExistingLogo = formData.get("KeepExistingLogo") as string | null;
 
   if (!id || !nombre) {
     throw new Error("El ID y el nombre del hospital son requeridos.");
   }
 
   try {
-    await executeQuery(`UPDATE hospitales SET hospital = ? WHERE id = ?`, [
+    let logoUrl = null;
+
+    if (logoFile && logoFile.size > 0) {
+      // New logo uploaded
+      const buffer = Buffer.from(await logoFile.arrayBuffer());
+      const uniqueName = `${Date.now()}-${logoFile.name.replace(/\s+/g, "_")}`;
+      const uploadDir = path.join(process.cwd(), "public/uploads/logos");
+      
+      await fs.mkdir(uploadDir, { recursive: true });
+      
+      const filePath = path.join(uploadDir, uniqueName);
+      await fs.writeFile(filePath, buffer);
+      logoUrl = `/uploads/logos/${uniqueName}`;
+    } else if (keepExistingLogo) {
+      // No new file, but client told us to keep the existing one
+      logoUrl = keepExistingLogo;
+    }
+
+    await executeQuery(`UPDATE hospitales SET hospital = ?, logo = ? WHERE id = ?`, [
       nombre,
+      logoUrl,
       id,
     ]);
   } catch (error) {
