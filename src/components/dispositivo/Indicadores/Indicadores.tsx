@@ -26,7 +26,7 @@ const Indicador = ({ titulo, valor, icono, info, color = "#10B981" }: IndicadorP
             <TooltipTrigger asChild>
               <InfoIcon className="h-5 w-5 text-gray-400 cursor-help" />
             </TooltipTrigger>
-            <TooltipContent>
+            <TooltipContent className="max-w-sm">
               <p>{info || `Información sobre ${titulo}`}</p>
             </TooltipContent>
           </Tooltip>
