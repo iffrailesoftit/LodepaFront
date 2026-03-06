@@ -393,7 +393,6 @@ export async function POST(req: NextRequest) {
     })
 
     const publicDir = path.join(process.cwd(), "public")
-    const logoLeftPath = path.join(publicDir, "quironsalud.png")
     const logoRightPath = path.join(publicDir, "logo.jpg")
     const devicePath = path.join(publicDir, "dispositivo.png")
     const indicadoresPath = path.join(publicDir, "indicadores.png")
@@ -401,14 +400,12 @@ export async function POST(req: NextRequest) {
     const logoWebPath = path.join(publicDir, "web.png")
     const imagenesInforme = loadImagesFromFolder();
 
-    let logoLeftBase64 = ""
     let logoRightBase64 = ""
     let deviceBase64 = ""
     let indicadoresBase64 = ""
     let parametrosBase64 = ""
     let logoWebBase64 = ""
     try {
-      logoLeftBase64 = fs.readFileSync(logoLeftPath).toString("base64")
       logoRightBase64 = fs.readFileSync(logoRightPath).toString("base64")
       deviceBase64 = fs.readFileSync(devicePath).toString("base64")
       indicadoresBase64 = fs.readFileSync(indicadoresPath).toString("base64")
@@ -497,7 +494,7 @@ export async function POST(req: NextRequest) {
         let registroDiario: RegistroDiario[] = [];
         let umbrales: UmbralAlerta[] = [];
         let alertas: any[] = [];
-        let logoHospitalBase64 = logoLeftBase64 || "";
+        let logoHospitalBase64 = "";
         try {
           registroDiario = await getRegistroDiario(sala.id_dispositivo, queryStartDate, queryEndDate)
           umbrales = await getUmbrales(sala.id_dispositivo);
@@ -919,7 +916,21 @@ const config = {
           </div>
           </body></html>
         `
-
+        let headerTemplate = `
+            <div style="width:100%; padding:10px 40px; font-family:Segoe UI; font-size:11px; display:flex; justify-content:space-between; align-items:center; border-bottom: 0.5px solid #e5e7eb;">
+              <img src="data:image/jpeg;base64,${logoRightBase64}" style="height:35px;" />
+              <div style="flex:1; text-align:center; font-weight:700; color:#009ee2; margin: 0 20px; text-transform: uppercase; letter-spacing: 0.5px;">INFORME MENSUAL EQUIPOS DE MONITORIZACIÓN LODEPA</div>
+              <img src="data:image/png;base64,${logoHospitalBase64}" style="height:35px;" />
+            </div>
+          `
+        if(logoHospitalBase64 ==""){
+          headerTemplate = `
+            <div style="width:100%; padding:10px 40px; font-family:Segoe UI; font-size:11px; display:flex; justify-content:space-between; align-items:center; border-bottom: 0.5px solid #e5e7eb;">
+              <img src="data:image/jpeg;base64,${logoRightBase64}" style="height:35px;" />
+              <div style="flex:1; text-align:center; font-weight:700; color:#009ee2; margin: 0 20px; text-transform: uppercase; letter-spacing: 0.5px;">INFORME MENSUAL EQUIPOS DE MONITORIZACIÓN LODEPA</div>
+            </div>
+          `
+        }
         const page = await browser.newPage()
         await page.setContent(htmlContent, { waitUntil: "networkidle0" })
         const pdfBuffer = await page.pdf({
@@ -927,13 +938,7 @@ const config = {
           printBackground: true,
           displayHeaderFooter: true,
           margin: { top: "90px", bottom: "60px", left: "20mm", right: "20mm" },
-          headerTemplate: `
-            <div style="width:100%; padding:10px 40px; font-family:Segoe UI; font-size:11px; display:flex; justify-content:space-between; align-items:center; border-bottom: 0.5px solid #e5e7eb;">
-              <img src="data:image/jpeg;base64,${logoRightBase64}" style="height:35px;" />
-              <div style="flex:1; text-align:center; font-weight:700; color:#009ee2; margin: 0 20px; text-transform: uppercase; letter-spacing: 0.5px;">INFORME MENSUAL EQUIPOS DE MONITORIZACIÓN LODEPA</div>
-              <img src="data:image/png;base64,${logoHospitalBase64}" style="height:35px;" />
-            </div>
-          `,
+          headerTemplate: headerTemplate,
           footerTemplate: `
             <div style="width:100%; padding: 0 40px; display: flex; justify-content: space-between; font-family:Segoe UI; font-size:9px; color:#6b7280; border-top: 0.5px solid #e5e7eb; padding-top: 10px;">
               <div>Lodepa · Informe Automatizado</div>

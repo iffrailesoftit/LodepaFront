@@ -71,14 +71,14 @@ const indicadoresIniciales = [
     key: "iaq",
     titulo: "Calidad de Aire Interior",
     valor: 100,
-    info: "Índice de calidad del aire interior",
+    info: "Indicador de Calidad de Aire Interior (IAQ): índice en escala 0-100 que permite conocer de forma rápida y sencilla la calidad del aire en un espacio interior. Se calcula a partir de parámetros como CO₂, TVOC y PM2.5, teniendo en cuenta su impacto combinado y la exposición en el tiempo.",
   },
   {
     key: "covid19",
     titulo: "Resistencia a Virus",
     valor: 74,
     icono: <WormIcon className="h-5 w-5" /> as React.ReactNode,
-    info: "Capacidad de resistencia contra virus en el ambiente",
+    info: "Indicador de Resistencia a la Propagación de Virus: índice en escala 0-100 que evalúa la capacidad de un espacio interior para reducir la propagación aérea de virus. Se calcula en tiempo real a partir de parámetros como temperatura, humedad relativa, CO₂ y PM2.5, que influyen en la supervivencia de los virus, la ventilación y el riesgo de infección. Además, permite identificar de forma sencilla si las condiciones del ambiente interior favorecen una mayor o menor protección frente al contagio.",
     color: "#10B981",
   },
   {
@@ -86,7 +86,7 @@ const indicadoresIniciales = [
     titulo: "Eficacia de Ventilación",
     valor: 85,
     icono: <Fan className="h-5 w-5" /> as React.ReactNode,
-    info: "Eficiencia del sistema de ventilación",
+    info: "Indicador de Eficacia de la Ventilación: índice en escala 0-100 que permite conocer, en tiempo real, si la ventilación de un espacio interior es adecuada. Se calcula a partir de la monitorización continua de CO₂ y TVOC, dos parámetros clave para evaluar la renovación del aire y detectar posibles deficiencias.",
     color: "#10B981",
   },
   {
@@ -94,7 +94,7 @@ const indicadoresIniciales = [
     titulo: "Confort Térmico",
     valor: 100,
     icono: <Thermometer className="h-5 w-5" /> as React.ReactNode,
-    info: "Nivel de confort térmico en el ambiente",
+    info: "Indicador de Confort Termohigrométrico: índice que permite evaluar de forma sencilla y en tiempo real el nivel de bienestar térmico de un espacio interior, a partir de la temperatura y la humedad relativa.",
     color: "#10B981",
   },
 ]
@@ -146,7 +146,7 @@ const Indicadores: React.FC<IndicadoresProps> = ({ id }) => {
         }))
 
         // Obtener colores usando la acción del servidor
-        const colores = await getStatusBatch(parametrosParaUmbrales,id)
+        const colores = await getStatusBatch(parametrosParaUmbrales, id)
 
         // Aplicar los colores a los indicadores
         const nuevosIndicadoresConColor = nuevosIndicadores.map((indicador) => ({
