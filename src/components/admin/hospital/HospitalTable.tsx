@@ -128,7 +128,7 @@ export default function HospitalTable({ hospitales }: any) {
                                 <td className="border px-4 py-2 text-sm">{hospital.id}</td>
                                 <td className="border px-4 py-2 text-sm">
                                     {hospital.logo ? (
-                                        <Image src={hospital.logo} alt={hospital.hospital} width={50} height={50} className="object-contain" />
+                                        <Image src={hospital.logo} alt={hospital.hospital} width={50} height={50} unoptimized className="object-contain" />
                                     ) : (
                                         <span className="text-gray-400 italic">Sin Logo</span>
                                     )}
