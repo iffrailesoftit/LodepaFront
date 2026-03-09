@@ -105,7 +105,7 @@ const loadImagesFromFolder = () => {
     }
 };
 
-const getStyle = (val: any, u: ParametrosAlerta | undefined) => {
+const getStyle = (val: any, u: UmbralAlerta | undefined) => {
     // 1. Validamos que el umbral exista
     if (!u) return "";
 
@@ -134,7 +134,7 @@ const getStyle = (val: any, u: ParametrosAlerta | undefined) => {
     return "style='color: #ef4444; font-weight: bold;'";
 };
 
-const getChartColors = (val: any, u?: ParametrosAlerta) => {
+const getChartColors = (val: any, u?: UmbralAlerta) => {
   if (!u) {
     return { border: "#10b981", bg: "rgba(16,185,129,0.05)" };
   }
@@ -208,7 +208,7 @@ type ChartPoint = {
 
 function getBandFromThresholds(
   value: number,
-  u?: ParametrosAlerta
+  u?: UmbralAlerta
 ): BandColor {
   if (!u) return "green"
 
@@ -228,7 +228,7 @@ function getStrokeFromBand(band: BandColor) {
   return "#ef4444"
 }
 
-function getCrossedThresholds(v1: number, v2: number, u?: ParametrosAlerta): number[] {
+function getCrossedThresholds(v1: number, v2: number, u?: UmbralAlerta): number[] {
   if (!u) return []
 
   const candidates = [
@@ -269,7 +269,7 @@ function interpolateCrossing(
 
 function buildContinuousSegmentedPoints(
   rawPoints: ChartPoint[],
-  u?: ParametrosAlerta
+  u?: UmbralAlerta
 ): ChartPoint[] {
   if (!u || rawPoints.length < 2) return rawPoints
 
@@ -295,7 +295,7 @@ function buildContinuousSegmentedPoints(
 
 function getDynamicYScale(
   values: number[],
-  umbral?: ParametrosAlerta
+  umbral?: UmbralAlerta
 ) {
   const cleanValues = values.filter((v) => typeof v === "number" && !Number.isNaN(v))
 
@@ -424,49 +424,89 @@ export async function POST(req: NextRequest) {
     };
 
     const commonStyles = `
-      <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; color: #111827; background-color: #ffffff; }
-        .cover-page { width: 100%; height: calc(100vh - 40px); display: flex; flex-direction: column; justify-content: space-between; padding: 40px 40px; box-sizing: border-box; background-color: #ffffff; }
-        .cover-title { text-align: center; margin-top: 0; padding: 20px 0; border-top: 4px solid #009ee2; border-bottom: 4px solid #009ee2; }
-        .cover-title h1 { font-size: 32px; font-weight: 800; margin-bottom: 15px; color: #009ee2; letter-spacing: -0.025em; }
-        .cover-title h2 { font-size: 24px; font-weight: 600; margin: 0; color: #009ee2; }
-        .cover-info { width: 60%; margin: 40px auto; margin-top: 120px; padding: 40px 30px; background-color: #f0faff; border-radius: 12px; border-left: 6px solid #009ee2; font-size: 15px; line-height: 2.5; color: #009ee2; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .cover-info div { display: flex; justify-content: flex-start; margin-bottom: 10px; }
-        .cover-info strong { width: 120px; color: #009ee2; flex-shrink: 0; }
-        .cover-device { text-align: center; display: flex; justify-content: space-around; align-items: center; margin-top: auto; }
-        .cover-device img { max-width: 40%; height: auto; object-fit: contain; }
-        .sala-title { font-size: 24px; font-weight: 700; color: #009ee2; border-bottom: 2px solid #009ee2; padding-bottom: 12px; margin: 40px 0 25px 0; }
-        .param-section { margin-bottom: 20px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 15px 18px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); }
-        .param-subtitle { font-size: 16px; font-weight: 700; color: #374151; margin-bottom: 10px; display: flex; align-items: center; }
-        .param-subtitle::before { content: ''; display: inline-block; width: 4px; height: 18px; background-color: #009ee2; margin-right: 12px; border-radius: 2px; }
-        .chart-container { width: 100%; background: #fff; }
-        .chart-container img { width: 100%; height: auto; }
-        .page-break { page-break-after: always; }
-        .daily-table { width: 100%; border-collapse: collapse; margin: 20px auto; font-size: 12px; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
-        .daily-table th { background-color: #f9fafb; color: #374151; font-weight: 700; text-align: center; padding: 12px; border-bottom: 2px solid #e5e7eb; -webkit-print-color-adjust: exact; }
-        .daily-table td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #4b5563; text-align: center; }
-        .daily-table tr:last-child td { border-bottom: none; }
-        .daily-table tr:nth-child(even) { background-color: #fcfcfc; -webkit-print-color-adjust: exact; }
-        .intro-page { padding: 20px 40px; background-color: #ffffff; box-sizing: border-box; }
-        .intro-content { font-size: 16px; line-height: 1.8; color: #4b5563; }
-        .intro-content p { margin-bottom: 20px; }
-        .contact-box { margin-top: 40px; background-color: #f0faff; border-left: 4px solid #009ee2; padding: 20px; border-radius: 8px; }
-        .contact-box p { margin-bottom: 8px; }
-        .contact-box p:last-child { margin-bottom: 0; }
-        .parameters-page { background-color: #ffffff; margin: 0; padding: 0; }
-        .parameters-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; page-break-inside: auto; }
-        .param-card { border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; background-color: #ffffff; page-break-inside: avoid; break-inside: avoid-column; height: 240px; overflow: hidden; }
-        .param-card-header { display: flex; align-items: center; justify-content: center; padding: 12px 8px; background-color: #f0faff; border-bottom: 1px solid #009ee2; color: #009ee2; font-size: 13px; font-weight: 700; min-height: 45px; -webkit-print-color-adjust: exact; }
-        .param-card-header img.param-icon { width: 40px; height: 40px; margin-right: 8px; object-fit: contain; vertical-align: middle; display: inline-block; }
-        .param-card-box { padding: 12px; font-size: 10.5px; line-height: 1.5; color: #4b5563; flex-grow: 1; text-align: left; }
-        .param-card-title { background-color: #f9fafb; padding: 8px; font-weight: bold; text-align: center; font-size: 11px; border-top: 1px solid #e5e7eb; color: #1f2937; -webkit-print-color-adjust: exact; }
-        .param-title { font-size: 22px; font-weight: 800; color: #009ee2; background: linear-gradient(90deg, #f0faff 0%, #ffffff 100%); padding: 12px 20px; border-left: 6px solid #009ee2; margin: 30px 0 15px 0; letter-spacing: 0.05em; -webkit-print-color-adjust: exact; }
-        .epa-quote-container { text-align: center; margin: 20px 0; padding: 10px; }
-        .epa-quote-text { color: #009ee2; font-size: 24px; font-weight: 800; margin-bottom: 5px; font-style: normal; }
-        .epa-source { background-color: #a1a1a1; color: white; font-size: 12px; padding: 2px 10px; display: inline-block; border-radius: 2px; margin-bottom: 15px; text-transform: uppercase; -webkit-print-color-adjust: exact; }
-        .intro-subtitle { color: #6b7280; font-size: 16px; text-align: center; }
-      </style>
-    `
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; color: #111827; background-color: #ffffff; }
+    .cover-page { width: 100%; height: calc(100vh - 40px); display: flex; flex-direction: column; justify-content: space-between; padding: 40px 40px; box-sizing: border-box; background-color: #ffffff; }
+    .cover-title { text-align: center; margin-top: 0; padding: 20px 0; border-top: 4px solid #009ee2; border-bottom: 4px solid #009ee2; }
+    .cover-title h1 { font-size: 32px; font-weight: 800; margin-bottom: 15px; color: #009ee2; letter-spacing: -0.025em; }
+    .cover-title h2 { font-size: 24px; font-weight: 600; margin: 0; color: #009ee2; }
+    .cover-info { width: 60%; margin: 40px auto; margin-top: 120px; padding: 40px 30px; background-color: #f0faff; border-radius: 12px; border-left: 6px solid #009ee2; font-size: 15px; line-height: 2.5; color: #009ee2; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .cover-info div { display: flex; justify-content: flex-start; margin-bottom: 10px; }
+    .cover-info strong { width: 120px; color: #009ee2; flex-shrink: 0; }
+
+    .cover-device {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 20px;
+      margin-top: auto;
+    }
+
+    .cover-device-main {
+      width: 34%;
+      max-width: 250px;
+      height: auto;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .cover-device-indicators {
+      width: 58%;
+      max-width: 460px;
+      height: auto;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .sala-title { font-size: 24px; font-weight: 700; color: #009ee2; border-bottom: 2px solid #009ee2; padding-bottom: 12px; margin: 40px 0 25px 0; }
+    .param-section { margin-bottom: 20px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 15px 18px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); }
+    .param-subtitle { font-size: 16px; font-weight: 700; color: #374151; margin-bottom: 10px; display: flex; align-items: center; }
+    .param-subtitle::before { content: ''; display: inline-block; width: 4px; height: 18px; background-color: #009ee2; margin-right: 12px; border-radius: 2px; }
+    .chart-container { width: 100%; background: #fff; }
+    .chart-container img { width: 100%; height: auto; }
+    .page-break { page-break-after: always; }
+    .daily-table { width: 100%; border-collapse: collapse; margin: 20px auto; font-size: 12px; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+    .daily-table th { background-color: #f9fafb; color: #374151; font-weight: 700; text-align: center; padding: 12px; border-bottom: 2px solid #e5e7eb; -webkit-print-color-adjust: exact; }
+    .daily-table td { padding: 10px 12px; border-bottom: 1px solid #f3f4f6; color: #4b5563; text-align: center; }
+    .daily-table tr:last-child td { border-bottom: none; }
+    .daily-table tr:nth-child(even) { background-color: #fcfcfc; -webkit-print-color-adjust: exact; }
+    .intro-page { padding: 20px 40px; background-color: #ffffff; box-sizing: border-box; }
+    .intro-content { font-size: 16px; line-height: 1.8; color: #4b5563; }
+    .intro-content p { margin-bottom: 20px; }
+
+    .intro-parameters-image-wrapper {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 24px 0 10px;
+    }
+
+    .intro-parameters-image {
+      width: 100%;
+      max-width: 680px;
+      max-height: 360px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .contact-box { margin-top: 40px; background-color: #f0faff; border-left: 4px solid #009ee2; padding: 20px; border-radius: 8px; }
+    .contact-box p { margin-bottom: 8px; }
+    .contact-box p:last-child { margin-bottom: 0; }
+    .parameters-page { background-color: #ffffff; margin: 0; padding: 0; }
+    .parameters-container { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; page-break-inside: auto; }
+    .param-card { border: 1px solid #e5e7eb; border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; background-color: #ffffff; page-break-inside: avoid; break-inside: avoid-column; height: 240px; overflow: hidden; }
+    .param-card-header { display: flex; align-items: center; justify-content: center; padding: 12px 8px; background-color: #f0faff; border-bottom: 1px solid #009ee2; color: #009ee2; font-size: 13px; font-weight: 700; min-height: 45px; -webkit-print-color-adjust: exact; }
+    .param-card-header img.param-icon { width: 40px; height: 40px; margin-right: 8px; object-fit: contain; vertical-align: middle; display: inline-block; }
+    .param-card-box { padding: 12px; font-size: 10.5px; line-height: 1.5; color: #4b5563; flex-grow: 1; text-align: left; }
+    .param-card-title { background-color: #f9fafb; padding: 8px; font-weight: bold; text-align: center; font-size: 11px; border-top: 1px solid #e5e7eb; color: #1f2937; -webkit-print-color-adjust: exact; }
+    .param-title { font-size: 22px; font-weight: 800; color: #009ee2; background: linear-gradient(90deg, #f0faff 0%, #ffffff 100%); padding: 12px 20px; border-left: 6px solid #009ee2; margin: 30px 0 15px 0; letter-spacing: 0.05em; -webkit-print-color-adjust: exact; }
+    .epa-quote-container { text-align: center; margin: 20px 0; padding: 10px; }
+    .epa-quote-text { color: #009ee2; font-size: 24px; font-weight: 800; margin-bottom: 5px; font-style: normal; }
+    .epa-source { background-color: #a1a1a1; color: white; font-size: 12px; padding: 2px 10px; display: inline-block; border-radius: 2px; margin-bottom: 15px; text-transform: uppercase; -webkit-print-color-adjust: exact; }
+    .intro-subtitle { color: #6b7280; font-size: 16px; text-align: center; }
+  </style>
+`
 
     const browser = await puppeteer.launch({
       headless: true,
@@ -527,8 +567,8 @@ export async function POST(req: NextRequest) {
                 <div><strong>PERÍODO:</strong> ${finalStartDate} – ${finalEndDate}</div>
               </div>
               <div class="cover-device">
-                <img src="data:image/png;base64,${deviceBase64}" />
-                <img src="data:image/png;base64,${indicadoresBase64}" />
+                <img class="cover-device-main" src="data:image/png;base64,${deviceBase64}" />
+                <img class="cover-device-indicators" src="data:image/png;base64,${indicadoresBase64}" />
               </div>
             </div>
             <div class="page-break"></div>
@@ -538,7 +578,9 @@ export async function POST(req: NextRequest) {
                 <p>El presente informe se ha generado automáticamente para que disponga de toda la información de su dispositivo de medición <strong>LODEPA Inbiot</strong>.</p>
                 <p>Todos los meses, las personas dadas de alta recibirán el presente informe actualizado.</p>
                 <p>Le presentamos la gráfica de cada uno de los parámetros analizados. Si desea el histórico completo de datos (una tabla Excel con todos los datos recogidos por su medidor con frecuencia de 10 minutos), puede extraerlo mediante la pestaña <strong>informes</strong> en la plataforma Web.</p>
-                <img src="data:image/png;base64,${parametrosBase64}" />
+                <div class="intro-parameters-image-wrapper">
+                  <img class="intro-parameters-image" src="data:image/png;base64,${parametrosBase64}" />
+                </div>
                 <div class="contact-box">
                   <p>Por favor, revise exhaustivamente la información ofrecida. Si tiene cualquier cuestión al respecto, puede ponerse en contacto con nosotros:</p>
                   <p><strong>Email:</strong> calidad@lodepa.com</p>

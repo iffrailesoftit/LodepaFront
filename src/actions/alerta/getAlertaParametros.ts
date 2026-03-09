@@ -16,17 +16,14 @@ export interface ParametrosAlerta extends RowDataPacket {
 export interface UmbralAlerta extends RowDataPacket {
     rowid: number;
     parametro: string;
-    id_umbral_alerta: number;
-    id_conf_alerta: number;
     min_good: number;
     max_good: number;
     min_warning: number;
     max_warning: number;
     estado: boolean;
-    rn: number;
 }
 
-export async function getParametrosAlerta(id_conf_alerta:number): Promise<ParametrosAlerta[]> {
+export async function getParametrosAlerta(id_conf_alerta:number): Promise<ParametrosAlerta[]> { 
     try {
             const [rows] = await executeQuery<ParametrosAlerta[] & RowDataPacket[]>(
                 `SELECT
@@ -52,27 +49,40 @@ export async function getParametrosAlerta(id_conf_alerta:number): Promise<Parame
 export async function getUmbrales(id_dispositivo:number): Promise<UmbralAlerta[]> {
     try {
             const [rows] = await executeQuery<UmbralAlerta[] & RowDataPacket[]>(
-                `SELECT *
-                    FROM (
-                        SELECT
-                            u.rowid,
-                            u.parametro,
-                            ua.rowid AS id_umbral_alerta,
-                            ua.id_conf_alerta,
-                            u.min_good,
-                            u.max_good,
-                            COALESCE(ua.min_warning, u.min_warning)   AS min_warning,
-                            COALESCE(ua.max_warning, u.max_warning)   AS max_warning,
-                            ua.estado,
-                            ROW_NUMBER() OVER (PARTITION BY u.rowid ORDER BY ua.max_warning DESC) AS rn
-                        FROM umbrales u
-                        JOIN umbrales_alertas ua ON ua.id_parametro = u.rowid
-                        JOIN configuracion_alertas ca ON ca.id = ua.id_conf_alerta
-                        JOIN dispositivos d ON d.sala = ca.sala_id
-                        WHERE d.id = ?
-                        AND HOUR(NOW()) BETWEEN ca.hora_min AND ca.hora_max
-                    ) t
-                    WHERE rn = 1; `
+                `SELECT
+                    t.rowid,
+                    t.parametro,
+                    t.min_good,
+                    t.max_good,
+                    t.min_warning,
+                    t.max_warning,
+                    t.estado
+                FROM (
+                    SELECT
+                        u.rowid,
+                        u.parametro,
+                        u.min_good,
+                        u.max_good,
+                        COALESCE(ua.min_warning, u.min_warning) AS min_warning,
+                        COALESCE(ua.max_warning, u.max_warning) AS max_warning,
+                        ua.estado,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY u.rowid
+                            ORDER BY
+                                COALESCE(ua.max_warning, u.max_warning) DESC,
+                                ua.rowid DESC
+                        ) AS rn
+                    FROM umbrales u
+                    JOIN dispositivos d
+                        ON d.id = ?
+                    LEFT JOIN configuracion_alertas ca
+                        ON ca.sala_id = d.sala
+                    AND HOUR(NOW()) BETWEEN ca.hora_min AND ca.hora_max
+                    LEFT JOIN umbrales_alertas ua
+                        ON ua.id_parametro = u.rowid
+                    AND ua.id_conf_alerta = ca.id
+                ) t
+                WHERE t.rn = 1;`
             ,[id_dispositivo]);
             return rows;
     } catch (error) {
