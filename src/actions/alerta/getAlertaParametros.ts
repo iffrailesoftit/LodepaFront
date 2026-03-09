@@ -26,7 +26,7 @@ export interface UmbralAlerta extends RowDataPacket {
     rn: number;
 }
 
-export async function getParametrosAlerta(id_conf_alerta:number): Promise<ParametrosAlerta[]> { 
+export async function getParametrosAlerta(id_conf_alerta:number): Promise<ParametrosAlerta[]> {
     try {
             const [rows] = await executeQuery<ParametrosAlerta[] & RowDataPacket[]>(
                 `SELECT
@@ -61,8 +61,8 @@ export async function getUmbrales(id_dispositivo:number): Promise<UmbralAlerta[]
                             ua.id_conf_alerta,
                             u.min_good,
                             u.max_good,
-                            ua.min_warning,
-                            ua.max_warning,
+                            COALESCE(ua.min_warning, u.min_warning)   AS min_warning,
+                            COALESCE(ua.max_warning, u.max_warning)   AS max_warning,
                             ua.estado,
                             ROW_NUMBER() OVER (PARTITION BY u.rowid ORDER BY ua.max_warning DESC) AS rn
                         FROM umbrales u
