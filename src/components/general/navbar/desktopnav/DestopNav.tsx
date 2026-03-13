@@ -11,7 +11,13 @@ export const DesktopNav = ({ links }: { links: any }) => {
 
     <div className="hidden md:flex items-center space-x-6">
       {links.map((link: any) => (
-        <ItemNav key={link.name} href={link.href} className="px-4 py-2 rounded-md transition-all">
+        <ItemNav 
+          key={link.name} 
+          href={link.href} 
+          download={link.download} 
+          target={link.target} 
+          className="px-4 py-2 rounded-md transition-all"
+        >
           {link.name}
         </ItemNav>
       ))}

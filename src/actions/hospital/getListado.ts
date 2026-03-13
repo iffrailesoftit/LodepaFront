@@ -115,6 +115,51 @@ function transformData(rows: any[]) {
     return []
   }
 }
+
+export async function getListadoHospitalSalasByUser(id:number, rol:number): Promise<HospitalSala[]> {
+  try {
+    let rows: any;
+    switch(rol){
+      case 1:
+        [rows] = await executeQuery(
+          `SELECT h.id AS id_hospital, h.hospital, h.logo, s.id AS id_sala, s.n_sala, d.id AS id_dispositivo, d.n_dispositivo
+           FROM hospitales h
+           JOIN salas s ON h.id = s.hospital
+           JOIN dispositivos d ON s.id = d.sala
+       WHERE h.fecha_baja IS NULL AND s.fecha_baja IS NULL;`
+      )
+      break;
+      case 2:
+        [rows] = await executeQuery(
+          `SELECT h.id AS id_hospital, h.hospital, h.logo, s.id AS id_sala, s.n_sala, d.id AS id_dispositivo, d.n_dispositivo
+          FROM hospitales h
+          JOIN salas s ON h.id = s.hospital
+          JOIN dispositivos d ON s.id = d.sala
+          JOIN usuarios_hospitales uh ON h.id = uh.hospital_id
+      WHERE h.fecha_baja IS NULL AND s.fecha_baja IS NULL AND uh.usuario_id = ?;`,
+      [id]
+    )
+    break;
+    case 3:
+      [rows] = await executeQuery(
+        `SELECT h.id AS id_hospital, h.hospital, h.logo, s.id AS id_sala, s.n_sala, d.id AS id_dispositivo, d.n_dispositivo
+        FROM hospitales h
+        JOIN salas s ON h.id = s.hospital
+        JOIN dispositivos d ON s.id = d.sala
+        JOIN usuarios_salas us ON s.id = us.sala_id
+    WHERE h.fecha_baja IS NULL AND s.fecha_baja IS NULL AND us.usuario_id = ?;`,
+    [id]
+    )
+    break;
+    }
+    return rows as HospitalSala[]
+  } catch (error) {
+    console.error("Error al obtener datos:", error)
+    return []
+  }
+}
+
+
   export async function getListado(id:number,rol: number) {
     try {
       // Ejecutar la consulta SQL segun el Rol

@@ -239,7 +239,6 @@ function getStatusColor(value: number, thresholds: ParameterThresholds): string 
   if (!thresholds) return "#22c55e"
 
   const { min_good, max_good, min_warning, max_warning } = thresholds
-
   if (value >= min_good && value <= max_good) return "#22c55e"
   if (value >= min_warning && value <= max_warning) return "#eab308"
   return "#ef4444"
@@ -500,10 +499,10 @@ export function Grafica({ id }: GraficaProps) {
       const thresholdData = await getParameterThresholds(parameter, id)
       if (parameter === "iaq" || parameter === "thermal_indicator" || parameter === "ventilation_indicator" || parameter === "covid19") {
         setThresholds({
-          min_good: 0,
-          max_good: 0,
-          min_warning: 0,
-          max_warning: 0,
+          min_good: 65,
+          max_good: 100000,
+          min_warning: 36,
+          max_warning: 100000,
         })
       } else {
         setThresholds(thresholdData)
@@ -917,10 +916,16 @@ export function Grafica({ id }: GraficaProps) {
                   <YAxis
                     domain={[
                       (dataMin: number) => {
+                        if (!Number.isFinite(dataMin)) return 0
                         const padding = Math.abs(dataMin || 1) * 0.15
-                        return Number((dataMin - padding).toFixed(4))
+                        let minVal = Number((dataMin - padding).toFixed(4))
+                        if (["o3", "no2", "co", "iaq", "thermal_indicator", "ventilation_indicator", "covid19"].includes(parameter) && minVal < 0) {
+                          minVal = 0
+                        }
+                        return minVal
                       },
                       (dataMax: number) => {
+                        if (!Number.isFinite(dataMax)) return 100
                         const padding = Math.abs(dataMax || 1) * 0.15
                         return Number((dataMax + padding).toFixed(4))
                       },

@@ -6,6 +6,8 @@ import { MobileNav } from "./mobile/MobileNav"
 const links = [
   { name: "Dashboard", href: "/dashboard" },
   { name: "Alertas", href: "/dashboard/alertas" },
+  { name: "Informe", href: "/dashboard/informe" },
+  { name: "Manual", href: "/api/descargar-manual", download: true, target: "_blank" },
 ]
 
 export default async function Navbar() {
