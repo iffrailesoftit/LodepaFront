@@ -120,7 +120,7 @@ const getStyle = (val: any, u: UmbralAlerta | undefined) => {
     if (isNaN(numericVal)) return "";
 
     // LOG DE DEPURACIÓN (Revisa esto en tu consola)
-    console.log(`Comparando: ${numericVal} contra Min:${minW} y Max:${maxW}`);
+    // console.log(`Comparando: ${numericVal} contra Min:${minW} y Max:${maxW}`);
 
     // 4. Lógica de alerta
     // Si el valor se sale del rango [min, max], se pone en rojo
@@ -966,9 +966,19 @@ const config = {
         `
         let headerTemplate = `
             <div style="width:100%; padding:10px 40px; font-family:Segoe UI; font-size:11px; display:flex; justify-content:space-between; align-items:center; border-bottom: 0.5px solid #e5e7eb;">
-              <img src="data:image/jpeg;base64,${logoRightBase64}" style="height:35px;" />
-              <div style="flex:1; text-align:center; font-weight:700; color:#009ee2; margin: 0 20px; text-transform: uppercase; letter-spacing: 0.5px;">INFORME MENSUAL EQUIPOS DE MONITORIZACIÓN LODEPA</div>
-              <img src="data:image/png;base64,${logoHospitalBase64}" style="height:35px;" />
+
+              <div style="width:140px; display:flex; align-items:center;">
+                <img src="data:image/jpeg;base64,${logoRightBase64}" style="max-height:35px; width:auto;" />
+              </div>
+
+              <div style="flex:1; text-align:center; font-weight:700; color:#009ee2; margin:0 20px; text-transform:uppercase; letter-spacing:0.5px;">
+                INFORME MENSUAL EQUIPOS DE MONITORIZACIÓN LODEPA
+              </div>
+
+              <div style="width:140px; display:flex; justify-content:flex-end; align-items:center;">
+                <img src="data:image/png;base64,${logoHospitalBase64}" style="max-height:35px; width:auto;" />
+              </div>
+
             </div>
           `
         if(logoHospitalBase64 ==""){
