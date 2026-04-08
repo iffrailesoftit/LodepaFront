@@ -1,8 +1,9 @@
 "use client"
 
 import React, { useState } from "react"
-import { Calendar, Download, Loader2 } from "lucide-react"
+import { Calendar, Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react"
 import { toast } from 'react-hot-toast'
+import { getDispositivo } from "@/actions/dispositivo/getDispositivo"
 
 interface InformeProps {
   id: string
@@ -32,6 +33,7 @@ const Informe: React.FC<InformeProps> = ({ id }) => {
   const dispositivo = Number(id)
   const [inicio, setInicio] = useState<string>(defaultInicio)
   const [fin, setFin] = useState<string>(defaultFin)
+  const [reportType, setReportType] = useState<'pdf' | 'excel'>('pdf')
 
   const generateReport = async () => {
     // Validación: inicio no puede ser mayor que fin
@@ -42,35 +44,80 @@ const Informe: React.FC<InformeProps> = ({ id }) => {
 
     setLoading(true)
     try {
-      const url = `/api/informe/${dispositivo}/${encodeURIComponent(inicio)}/${encodeURIComponent(fin)}`
-      const response = await fetch(url)
+      if (reportType === 'excel') {
+        const url = `/api/informe/${dispositivo}/${encodeURIComponent(inicio)}/${encodeURIComponent(fin)}`
+        const response = await fetch(url)
 
-      if (!response.ok) {
-        throw new Error("Error al generar el informe")
+        if (!response.ok) {
+          throw new Error("Error al generar el informe")
+        }
+        const header = response.headers.get("Content-Disposition") || ""
+        let filename = header.split("filename=")[1] || "informe.xlsx"
+        filename = filename.trim().replace(/^"|"$/g, "")
+
+        if (filename === "No_hay_registros.xlsx") {
+          toast.error('No se encontraron datos para generar el informe')
+          return
+        }
+
+        const blob = await response.blob()
+        const downloadUrl = window.URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = downloadUrl
+        a.download = filename
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        window.URL.revokeObjectURL(downloadUrl)
+      } else {
+        // Lógica para PDF
+        const deviceData = await getDispositivo(id)
+        if (!deviceData) {
+          throw new Error("No se pudo obtener la información del dispositivo")
+        }
+
+        const res = await fetch("/api/informe/pdf", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            selectedSalas: [
+              {
+                id_hospital: deviceData.id_hospital,
+                hospital: deviceData.n_hospital,
+                logo: "", // El API buscará el logo por defecto o según la configuración
+                salas: [
+                  {
+                    id_sala: deviceData.id_sala,
+                    n_sala: deviceData.n_sala,
+                    id_dispositivo: deviceData.id_dispositivo,
+                    n_dispositivo: deviceData.n_dispositivo
+                  }
+                ]
+              }
+            ],
+            customStartDate: inicio.split('T')[0],
+            customEndDate: fin.split('T')[0],
+          }),
+        })
+
+        if (!res.ok) {
+          const errorData = await res.json()
+          throw new Error(errorData.error || "Error al generar el PDF")
+        }
+
+        const blob = await res.blob()
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = `informe-${deviceData.n_dispositivo}-${inicio.split('T')[0]}.pdf`
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        URL.revokeObjectURL(url)
       }
-      const header = response.headers.get("Content-Disposition") || ""
-      let filename = header.split("filename=")[1] || "informe.xlsx"
-      filename = filename.trim().replace(/^"|"$/g, "")
-
-      if (filename === "No_hay_registros.xlsx") {
-        toast.error('No se encontraron datos para generar el informe')
-        return
-      }
-
-      const blob = await response.blob()
-      const downloadUrl = window.URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = downloadUrl
-      
-      a.download = filename
-
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      window.URL.revokeObjectURL(downloadUrl)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error:", error)
-      toast.error('Ocurrió un error al generar el informe')
+      toast.error(error.message || 'Ocurrió un error al generar el informe')
     } finally {
       setLoading(false)
     }
@@ -87,6 +134,36 @@ const Informe: React.FC<InformeProps> = ({ id }) => {
           }}
           className="space-y-6"
         >
+          <div className="space-y-4">
+            <label className="block text-sm font-medium text-gray-700">Formato del informe</label>
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() => setReportType('pdf')}
+                className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                  reportType === 'pdf'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                }`}
+              >
+                <FileText className="h-5 w-5" />
+                <span className="font-semibold">PDF</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setReportType('excel')}
+                className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all ${
+                  reportType === 'excel'
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                }`}
+              >
+                <FileSpreadsheet className="h-5 w-5" />
+                <span className="font-semibold">Excel (XLSX)</span>
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="fecha-inicio" className="block text-sm font-medium text-gray-700 mb-2">
