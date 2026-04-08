@@ -3,7 +3,7 @@ import  { executeQuery } from '@/lib/db';
 import { RowDataPacket } from 'mysql2/promise';
 
 interface Dispositivo {
-  id: number;
+  id_dispositivo: number;
   n_dispositivo: string;
   referencia: string;
   id_sala: number;
