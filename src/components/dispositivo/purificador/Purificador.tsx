@@ -148,6 +148,9 @@ const Purificador: React.FC<PurificadorProps> = ({ id }) => {
                         </p>
                     </div>
 
+
+
+
                     {/* Card: Velocidad de Ventiladores */}
                     <div className="bg-gradient-to-br from-white to-purple-50 rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-all duration-300">
                         <div className="flex items-center justify-between mb-4">
@@ -173,6 +176,7 @@ const Purificador: React.FC<PurificadorProps> = ({ id }) => {
                                 <p className="text-2xl font-bold text-purple-500">Lento</p>
                                 <p className="text-sm text-gray-500 mt-1">Velocidad baja</p>
                             </>
+
                         )}
                     </div>
 
@@ -181,5 +185,7 @@ const Purificador: React.FC<PurificadorProps> = ({ id }) => {
         </div>
     )
 }
+
+
 
 export default Purificador

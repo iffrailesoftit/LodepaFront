@@ -1,4 +1,4 @@
-import { getSession } from "@/actions/auth/getSession";
+import { verifySession } from "@/actions/auth/getSession";
 import { getPurificadorBySala } from "@/actions/purificadores/getPurificador";
 import { NextResponse } from "next/server";
 
@@ -6,9 +6,9 @@ export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const session = await getSession();
+  const session = await verifySession();
   if (!session) {
-    return NextResponse.json({ message: "No autorizado" }, { status: 401 });
+    return NextResponse.json({ error: "Sesión expirada" }, { status: 401 });
   }
   // 1. Esperar a que se resuelvan los parámetros
   const { id } = await context.params;

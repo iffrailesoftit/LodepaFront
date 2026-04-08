@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         token,
         isAuthenticated: !!token,
         login,
-        logout,
+        logout,                                                                       
       }}
     >
       {children}

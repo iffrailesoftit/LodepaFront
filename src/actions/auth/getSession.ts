@@ -5,22 +5,29 @@ import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-export const getSession = async () => {
+export const verifySession = async () => {
   const token = (await cookies()).get('token')?.value;
-  if (!token) {
-    redirect('/login'); // Redirige si no hay token
-  }
+  if (!token) return null;
+
   if (!process.env.JWT_SECRET) {
     throw new Error(
       'La clave JWT_SECRET no está definida en las variables de entorno.'
     );
   }
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET) as User;
-    // console.log({ token: decoded });
     return decoded;
   } catch (error) {
     console.error('Error al verificar el token:', error);
-    redirect('/login'); // Redirige si el token es inválido o expiró
+    return null;
   }
+};
+
+export const getSession = async () => {
+  const session = await verifySession();
+  if (!session) {
+    redirect('/login');
+  }
+  return session;
 };

@@ -33,7 +33,10 @@ export const FormLogin = () => {
         throw new Error(data.error || "Error desconocido")
       }
 
-      login(data.token);
+      if (data.token) {
+        login(data.token);
+      }
+      
       router.push("/dashboard");
     } catch (error) {
       setErrorMessage((error as Error).message)
@@ -97,7 +100,7 @@ export const FormLogin = () => {
             </button>
           </div>
         </div>
-
+        
         <button
           type="submit"
           className={`w-full py-2 px-4 rounded-md text-white font-medium cursor-pointer ${isLoading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700"

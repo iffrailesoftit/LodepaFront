@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Users, Building2, Menu, X, FolderClosed } from "lucide-react"
+import { Users, Building2, Menu, X, FolderClosed, Wind, Wrench } from "lucide-react"
 
-export default function AdminMenu() {
+export default function AdminMenu({ rol }: { rol?: number }) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
@@ -27,23 +27,40 @@ export default function AdminMenu() {
     }
   }, [])
 
-  const menuItems = [
+  const allMenuItems = [
     {
       href: "/dashboard/admin",
       label: "Gestión Usuario",
       icon: <Users className="h-5 w-5" />,
+      roles: [1, 2],
     },
     {
       href: "/dashboard/admin/hospital",
       label: "Gestión Hospital",
       icon: <Building2 className="h-5 w-5" />,
+      roles: [1, 2],
     },
     {
       href: "/dashboard/admin/informe",
       label: "Informes",
       icon: <FolderClosed className="h-5 w-5" />,
+      roles: [1, 2],
+    },
+    {
+      href: "/dashboard/admin/purificadores",
+      label: "Purificadores",
+      icon: <Wind className="h-5 w-5" />,
+      roles: [1, 2, 4],
+    },
+    {
+      href: "/dashboard/admin/incidencias",
+      label: "Incidencias",
+      icon: <Wrench className="h-5 w-5" />,
+      roles: [1, 4],
     },
   ]
+
+  const menuItems = allMenuItems.filter(item => !rol || item.roles.includes(rol));
 
   return (
     <div className="bg-white shadow-md rounded-lg">

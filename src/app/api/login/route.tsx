@@ -78,7 +78,7 @@ export async function POST(req: Request) {
         name: user.name,
         lastname: user.apellido,
         rol: user.rol,
-      }, //al lado ortro campo para el token
+      }, //al lado otro campo para el token
       process.env.JWT_SECRET,
       {
         expiresIn: expirationTime,
@@ -104,7 +104,6 @@ export async function POST(req: Request) {
     // console.log('Emitido en:', fechaEmision.toISOString());
 
     await guardarHistorialSesion(user.id,Number(iat),Number(exp),token);
-
 
     // console.log(response)
     return response;

@@ -36,7 +36,10 @@ export async function getPurificador(id: string) {
 
 export async function getPurificadorBySala(id: string) {
   const [rows]: any[] = await executeQuery(
-    `SELECT * FROM purificadores p WHERE p.sala = ?`,
+    `SELECT * 
+    FROM purificadores p 
+    LEFT JOIN dispositivos as d on p.sala = d.sala
+    WHERE d.id = ?`,
     [id]
   );
 
