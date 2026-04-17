@@ -113,16 +113,82 @@ const getStartDateByTimeRange = (endDate: Date, timeRange: TimeRange): Date => {
   return startDate
 }
 
-// Función para formatear fecha para SQL
+/**
+ * Formatea una fecha para la consulta SQL SIEMPRE usando la zona horaria de Madrid (Europe/Madrid).
+ * Esto garantiza que la consulta sea coherente sin importar si el servidor está en UTC o en Madrid.
+ * La base de datos almacena los registros en hora local de Madrid, por lo que debemos
+ * consultarla usando esa misma zona horaria.
+ */
 function formatDateForSQL(date: Date): string {
-  const year = date.getFullYear()
-  const month = (date.getMonth() + 1).toString().padStart(2, "0")
-  const day = date.getDate().toString().padStart(2, "0")
-  const hours = date.getHours().toString().padStart(2, "0")
-  const minutes = date.getMinutes().toString().padStart(2, "0")
-  const seconds = date.getSeconds().toString().padStart(2, "0")
+  // Usamos Intl.DateTimeFormat con la zona horaria de Madrid para obtener las partes de la fecha
+  const formatter = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Madrid",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  })
 
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+  const parts = formatter.formatToParts(date)
+  const p: Record<string, string> = {}
+  parts.forEach((part) => {
+    p[part.type] = part.value
+  })
+
+  // Retorna formato YYYY-MM-DD HH:mm:ss, que es lo que espera MySQL
+  return `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}:${p.second}`
+}
+
+/**
+ * Convierte un timestamp que viene de la base de datos (en hora de Madrid) a un
+ * string ISO-8601 en UTC. Así el cliente puede interpretarlo correctamente en
+ * cualquier zona horaria del navegador.
+ *
+ * Problema a resolver:
+ * - MySQL devuelve strings como "2026-04-17 11:05:00" (hora de Madrid, sin offset).
+ * - Si el servidor de Node está en UTC, `new Date("2026-04-17 11:05:00")` lo interpreta
+ *   como UTC (11:05 UTC), cuando en realidad es 11:05 Madrid (= 09:05 UTC).
+ * - Esto provoca un desfase de 2 horas en la gráfica.
+ *
+ * Solución:
+ * - Calculamos el offset de Madrid para ese instante concreto usando Intl.DateTimeFormat.
+ * - Restamos ese offset para obtener el UTC real y lo devolvemos como ISO string.
+ */
+function parseMySQLDate(timestamp: string | Date | null | undefined): string | null {
+  if (!timestamp) return null
+
+  // Si ya es un string ISO con 'Z', no necesita conversión
+  if (typeof timestamp === "string" && timestamp.includes("T") && timestamp.includes("Z")) {
+    return timestamp
+  }
+
+  let rawDate: Date
+
+  if (typeof timestamp === "string") {
+    // Convertimos el string de la BD ("YYYY-MM-DD HH:mm:ss") a Date.
+    // Sin zona horaria explícita, JS lo interpreta como horario LOCAL del servidor.
+    rawDate = new Date(timestamp.replace(" ", "T"))
+  } else {
+    // El driver mysql2 a veces ya nos da un objeto Date.
+    // Si el servidor es UTC, lo habrá interpretado como UTC, que es incorrecto
+    // (el valor real es Madrid), así que necesitamos corregirlo igual.
+    rawDate = timestamp
+  }
+
+  if (isNaN(rawDate.getTime())) return null
+
+  // Obtenemos qué hora marca Madrid para ese instante según el sistema
+  const madridStr = rawDate.toLocaleString("en-US", { timeZone: "Europe/Madrid" })
+  const madridDate = new Date(madridStr)
+
+  // La diferencia entre cómo leyó el servidor y lo que Madrid marca nos da el offset a corregir
+  const offsetMs = madridDate.getTime() - rawDate.getTime()
+
+  // Restamos el offset: el resultado es el instante UTC real correspondiente a la hora de Madrid
+  return new Date(rawDate.getTime() - offsetMs).toISOString()
 }
 
 // Función principal para obtener los datos de la gráfica
@@ -138,15 +204,15 @@ export async function getGraphicsData(
     const endDate = customEndDate ? new Date(customEndDate) : new Date()
     const startDate = customStartDate ? new Date(customStartDate) : getStartDateByTimeRange(endDate, timeRange)
 
-    // Formatear fechas para la consulta SQL
+    // Formatear fechas para la consulta SQL usando SIEMPRE la zona horaria de Madrid
     const startDateStr = formatDateForSQL(startDate)
     const endDateStr = formatDateForSQL(endDate)
 
     console.log("Consultando datos con los siguientes parámetros:")
     console.log("Dispositivo:", deviceId)
     console.log("Parámetro:", parameter)
-    console.log("Fecha inicio:", startDateStr)
-    console.log("Fecha fin:", endDateStr)
+    console.log("Fecha inicio (Madrid):", startDateStr)
+    console.log("Fecha fin (Madrid):", endDateStr)
     console.log("Usando fechas personalizadas:", !!customStartDate && !!customEndDate)
 
     // Consulta a la base de datos utilizando la estructura de la tabla "registros"
@@ -171,6 +237,29 @@ export async function getGraphicsData(
     // Procesar los resultados
     const dataPoints: DataPoint[] = []
 
+    /**
+     * Helper interno para procesar una fila y añadir el dataPoint.
+     * Devuelve true si se procesó correctamente.
+     */
+    function processRow(timestamp: any, value: any, label: string): boolean {
+      if (!timestamp || value === undefined) return false
+
+      try {
+        const numValue = Number.parseFloat(value)
+        if (!Number.isFinite(numValue)) return false
+
+        // Convertir el timestamp de Madrid a UTC-ISO usando parseMySQLDate
+        const isoTimestamp = parseMySQLDate(timestamp)
+        if (!isoTimestamp) return false
+
+        dataPoints.push({ timestamp: isoTimestamp, value: numValue })
+        return true
+      } catch (err) {
+        console.error(`Error al procesar ${label}:`, err)
+        return false
+      }
+    }
+
     // Verificar si result es un array
     if (Array.isArray(result)) {
       console.log("Resultado es un array con", result.length, "elementos")
@@ -179,54 +268,13 @@ export async function getGraphicsData(
       if (result.length > 0 && Array.isArray(result[0])) {
         console.log("El primer elemento es un array con", result[0].length, "filas")
 
-        // Procesar el primer elemento como el array de filas
         const rows = result[0] as QueryResultRow[]
 
         for (let i = 0; i < rows.length; i++) {
           const row = rows[i]
 
           if (row && typeof row === "object" && "update_time" in row && parameter in row) {
-            const timestamp = row.update_time
-            const value = row[parameter]
-
-            // Solo mostrar logs para la primera y última fila, y cada 20 filas
-            if (i === 0 || i === rows.length - 1 || i % 20 === 0) {
-              // console.log(`Procesando fila ${i}/${rows.length}:`, { timestamp, value })
-            }
-
-            if (timestamp && value !== undefined) {
-              try {
-                // Convertir el valor a número
-                const numValue = Number.parseFloat(value)
-
-                // Asegurarse de que el timestamp sea un string ISO
-                let isoTimestamp: string
-
-                if (typeof timestamp === "string") {
-                  // Si ya es un string ISO, usarlo directamente
-                  if (timestamp.includes("T") && timestamp.includes("Z")) {
-                    isoTimestamp = timestamp
-                  } else {
-                    // Convertir string de fecha a formato ISO
-                    isoTimestamp = new Date(timestamp).toISOString()
-                  }
-                } else if (timestamp instanceof Date) {
-                  isoTimestamp = timestamp.toISOString()
-                } else {
-                  console.warn(`Tipo de timestamp no reconocido en fila ${i}:`, typeof timestamp)
-                  continue // Saltar esta fila
-                }
-
-                dataPoints.push({
-                  timestamp: isoTimestamp,
-                  value: numValue,
-                })
-              } catch (err) {
-                console.error(`Error al procesar fila ${i}:`, err)
-              }
-            } else {
-              console.warn(`Fila ${i} con valores incompletos:`, { timestamp, value })
-            }
+            processRow(row.update_time, row[parameter], `fila ${i}/${rows.length}`)
           } else {
             console.warn(`Fila ${i} con estructura inesperada:`, row)
           }
@@ -236,106 +284,23 @@ export async function getGraphicsData(
         for (let i = 0; i < result.length; i++) {
           const row = result[i] as unknown as QueryResultRow
 
-          // Verificar si es un objeto con las propiedades esperadas
           if (row && typeof row === "object" && "update_time" in row && parameter in row) {
-            const timestamp = row.update_time
-            const value = row[parameter]
+            processRow(row.update_time, row[parameter], `fila ${i}/${result.length}`)
+          } else if (Array.isArray(row)) {
+            // Podría ser un subarreglo con las filas
+            console.log(`El elemento ${i} es un array con ${row.length} elementos, intentando procesar...`)
 
-            // Solo mostrar logs para la primera y última fila, y cada 20 filas
-            if (i === 0 || i === result.length - 1 || i % 20 === 0) {
-              // console.log(`Procesando fila ${i}/${result.length}:`, { timestamp, value })
-            }
+            for (let j = 0; j < row.length; j++) {
+              const subRow = row[j] as QueryResultRow
 
-            if (timestamp && value !== undefined) {
-              try {
-                // Convertir el valor a número
-                const numValue = Number.parseFloat(value)
-
-                // Asegurarse de que el timestamp sea un string ISO
-                let isoTimestamp: string
-
-                if (typeof timestamp === "string") {
-                  // Si ya es un string ISO, usarlo directamente
-                  if (timestamp.includes("T") && timestamp.includes("Z")) {
-                    isoTimestamp = timestamp
-                  } else {
-                    // Convertir string de fecha a formato ISO
-                    isoTimestamp = new Date(timestamp).toISOString()
-                  }
-                } else if (timestamp instanceof Date) {
-                  isoTimestamp = timestamp.toISOString()
-                } else {
-                  console.warn(`Tipo de timestamp no reconocido en fila ${i}:`, typeof timestamp)
-                  continue // Saltar esta fila
-                }
-
-                dataPoints.push({
-                  timestamp: isoTimestamp,
-                  value: numValue,
-                })
-              } catch (err) {
-                console.error(`Error al procesar fila ${i}:`, err)
+              if (subRow && typeof subRow === "object" && "update_time" in subRow && parameter in subRow) {
+                processRow(subRow.update_time, subRow[parameter], `subfila ${j}/${row.length}`)
+              } else {
+                console.warn(`Subfila ${j} con estructura inesperada:`, subRow)
               }
-            } else {
-              console.warn(`Fila ${i} con valores incompletos:`, { timestamp, value })
             }
           } else {
-            // Verificar si es un array (podría ser el primer elemento que contiene las filas)
-            if (Array.isArray(row)) {
-              console.log(`El elemento ${i} es un array con ${row.length} elementos, intentando procesar...`)
-
-              for (let j = 0; j < row.length; j++) {
-                const subRow = row[j] as QueryResultRow
-
-                if (subRow && typeof subRow === "object" && "update_time" in subRow && parameter in subRow) {
-                  const timestamp = subRow.update_time
-                  const value = subRow[parameter]
-
-                  // Solo mostrar logs para la primera y última fila, y cada 20 filas
-                  if (j === 0 || j === row.length - 1 || j % 20 === 0) {
-                    console.log(`Procesando subfila ${j}/${row.length}:`, { timestamp, value })
-                  }
-
-                  if (timestamp && value !== undefined) {
-                    try {
-                      // Convertir el valor a número
-                      const numValue = Number.parseFloat(value)
-
-                      // Asegurarse de que el timestamp sea un string ISO
-                      let isoTimestamp: string
-
-                      if (typeof timestamp === "string") {
-                        // Si ya es un string ISO, usarlo directamente
-                        if (timestamp.includes("T") && timestamp.includes("Z")) {
-                          isoTimestamp = timestamp
-                        } else {
-                          // Convertir string de fecha a formato ISO
-                          isoTimestamp = new Date(timestamp).toISOString()
-                        }
-                      } else if (timestamp instanceof Date) {
-                        isoTimestamp = timestamp.toISOString()
-                      } else {
-                        console.warn(`Tipo de timestamp no reconocido en subfila ${j}:`, typeof timestamp)
-                        continue // Saltar esta fila
-                      }
-
-                      dataPoints.push({
-                        timestamp: isoTimestamp,
-                        value: numValue,
-                      })
-                    } catch (err) {
-                      console.error(`Error al procesar subfila ${j}:`, err)
-                    }
-                  } else {
-                    console.warn(`Subfila ${j} con valores incompletos:`, { timestamp, value })
-                  }
-                } else {
-                  console.warn(`Subfila ${j} con estructura inesperada:`, subRow)
-                }
-              }
-            } else {
-              console.warn(`Fila ${i} con estructura inesperada:`, row)
-            }
+            console.warn(`Fila ${i} con estructura inesperada:`, row)
           }
         }
       }
@@ -346,44 +311,7 @@ export async function getGraphicsData(
       const row = result as unknown as QueryResultRow
 
       if ("update_time" in row && parameter in row) {
-        const timestamp = row.update_time
-        const value = row[parameter]
-
-        // console.log("Procesando fila única:", { timestamp, value })
-
-        if (timestamp && value !== undefined) {
-          try {
-            // Convertir el valor a número
-            const numValue = Number.parseFloat(value)
-
-            // Asegurarse de que el timestamp sea un string ISO
-            let isoTimestamp: string
-
-            if (typeof timestamp === "string") {
-              // Si ya es un string ISO, usarlo directamente
-              if (timestamp.includes("T") && timestamp.includes("Z")) {
-                isoTimestamp = timestamp
-              } else {
-                // Convertir string de fecha a formato ISO
-                isoTimestamp = new Date(timestamp).toISOString()
-              }
-            } else if (timestamp instanceof Date) {
-              isoTimestamp = timestamp.toISOString()
-            } else {
-              console.warn("Tipo de timestamp no reconocido:", typeof timestamp)
-              throw new Error("Formato de timestamp no válido")
-            }
-
-            dataPoints.push({
-              timestamp: isoTimestamp,
-              value: numValue,
-            })
-          } catch (err) {
-            console.error("Error al procesar fila única:", err)
-          }
-        } else {
-          console.warn("Fila única con valores incompletos:", { timestamp, value })
-        }
+        processRow(row.update_time, row[parameter], "fila única")
       } else {
         console.warn("Fila única con estructura inesperada:", row)
       }
@@ -419,4 +347,3 @@ export async function getGraphicsData(
     throw new Error("No se pudieron obtener los datos de la gráfica: " + (error as Error).message)
   }
 }
-

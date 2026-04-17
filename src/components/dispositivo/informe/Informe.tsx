@@ -140,11 +140,10 @@ const Informe: React.FC<InformeProps> = ({ id }) => {
               <button
                 type="button"
                 onClick={() => setReportType('pdf')}
-                className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all ${
-                  reportType === 'pdf'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
-                }`}
+                className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all ${reportType === 'pdf'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                  }`}
               >
                 <FileText className="h-5 w-5" />
                 <span className="font-semibold">PDF</span>
@@ -152,14 +151,13 @@ const Informe: React.FC<InformeProps> = ({ id }) => {
               <button
                 type="button"
                 onClick={() => setReportType('excel')}
-                className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all ${
-                  reportType === 'excel'
-                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                    : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
-                }`}
+                className={`flex-1 flex items-center justify-center gap-2 p-4 rounded-lg border-2 transition-all ${reportType === 'excel'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                  }`}
               >
                 <FileSpreadsheet className="h-5 w-5" />
-                <span className="font-semibold">Excel (XLSX)</span>
+                <span className="font-semibold">Excel (Datos en bruto)</span>
               </button>
             </div>
           </div>

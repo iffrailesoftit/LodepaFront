@@ -89,8 +89,7 @@ export async function getAlertaBySala(id: number, fechaInicio: string, fechaFin:
                 FROM alertas a
                 WHERE a.sala_id = ?
                 AND a.fecha BETWEEN ? AND ?
-                ORDER BY a.fecha DESC
-                LIMIT 15;`, [id, fechaInicio, fechaFin]
+                ORDER BY a.fecha DESC;`, [id, fechaInicio, fechaFin]
         );
         return rows;
     } catch (error) {
