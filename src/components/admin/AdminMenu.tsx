@@ -46,18 +46,18 @@ export default function AdminMenu({ rol }: { rol?: number }) {
       icon: <FolderClosed className="h-5 w-5" />,
       roles: [1, 2],
     },
-    {
-      href: "/dashboard/admin/purificadores",
-      label: "Purificadores",
-      icon: <Wind className="h-5 w-5" />,
-      roles: [1, 2, 4],
-    },
-    {
-      href: "/dashboard/admin/incidencias",
-      label: "Incidencias",
-      icon: <Wrench className="h-5 w-5" />,
-      roles: [1, 4],
-    },
+    // {
+    //   href: "/dashboard/admin/purificadores",
+    //   label: "Purificadores",
+    //   icon: <Wind className="h-5 w-5" />,
+    //   roles: [1, 2, 4],
+    // },
+    // {
+    //   href: "/dashboard/admin/incidencias",
+    //   label: "Incidencias",
+    //   icon: <Wrench className="h-5 w-5" />,
+    //   roles: [1, 4],
+    // },
   ]
 
   const menuItems = allMenuItems.filter(item => !rol || item.roles.includes(rol));

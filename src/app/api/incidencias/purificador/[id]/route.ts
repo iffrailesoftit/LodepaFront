@@ -4,7 +4,8 @@ import { verifySession } from "@/actions/auth/getSession";
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  // Next.js 15: los params de rutas dinámicas se reciben como Promise
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await verifySession();
   if (!session) {
@@ -15,7 +16,8 @@ export async function GET(
     return NextResponse.json({ error: "No autorizado" }, { status: 403 });
   }
 
-  const { id } = params;
+  // Hay que hacer await de params antes de desestructurar en Next.js 15
+  const { id } = await params;
 
   try {
     const [rows]: any[] = await executeQuery(

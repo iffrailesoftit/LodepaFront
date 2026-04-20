@@ -1,4 +1,6 @@
-import { FlatCompat } from "@eslint/eslintrc";
+// @eslint/eslintrc es un módulo CommonJS; se importa como default y se desestructura
+import pkg from "@eslint/eslintrc";
+const { FlatCompat } = pkg;
 import { dirname } from "path";
 import { fileURLToPath } from "url";
 

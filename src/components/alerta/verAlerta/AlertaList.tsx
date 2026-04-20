@@ -12,7 +12,7 @@ interface AlertasListProps {
     salas: Salas[];
 }
 
-export default function AlertasList({ alertas,hospitales,salas }: AlertasListProps) {
+export default function AlertasList({ alertas, hospitales, salas }: AlertasListProps) {
     const [filteredAlertas, setFilteredAlertas] = useState<Alerta[]>(alertas)
     const [isMobile, setIsMobile] = useState(false)
 
@@ -62,7 +62,7 @@ export default function AlertasList({ alertas,hospitales,salas }: AlertasListPro
         if (filtroHospital) {
             resultado = resultado.filter((alerta) => alerta.hospital_id === filtroHospital)
             setSelectSala(salas.filter((sala) => sala.hospital === filtroHospital))
-        }else{
+        } else {
             setSelectSala(salas)
         }
 
@@ -85,7 +85,7 @@ export default function AlertasList({ alertas,hospitales,salas }: AlertasListPro
 
         setFilteredAlertas(resultado)
         setCurrentPage(1) // Resetear a primera página cuando cambian los filtros
-    }, [alertas,salas,
+    }, [alertas, salas,
         // filtroSolventada, 
         filtroHospital, filtroSala, busqueda])
 
