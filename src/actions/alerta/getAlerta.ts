@@ -2,6 +2,7 @@
 
 import { executeQuery } from "@/lib/db";
 import { RowDataPacket } from "mysql2/promise";
+import { parseMySQLDate } from "@/lib/dateUtils";
 
 export interface Alerta extends RowDataPacket {
     id: number;
@@ -74,7 +75,13 @@ export async function getAlertaByUsuario(id: number,rol: number): Promise<Alerta
         );
         request= rows;
     }
-        return request;
+        return request.map((alerta) => {
+            const correctedDate = parseMySQLDate(alerta.fecha);
+            return {
+                ...alerta,
+                fecha: correctedDate ? new Date(correctedDate) : alerta.fecha
+            };
+        });
     } catch (error) {
         console.error("Error al obtener roles:", error);
         throw new Error("No se pudieron obtener los roles");
@@ -91,7 +98,13 @@ export async function getAlertaBySala(id: number, fechaInicio: string, fechaFin:
                 AND a.fecha BETWEEN ? AND ?
                 ORDER BY a.fecha DESC;`, [id, fechaInicio, fechaFin]
         );
-        return rows;
+        return rows.map((alerta) => {
+            const correctedDate = parseMySQLDate(alerta.fecha);
+            return {
+                ...alerta,
+                fecha: correctedDate ? new Date(correctedDate) : alerta.fecha
+            };
+        });
     } catch (error) {
         console.error("Error al obtener roles:", error);
         throw new Error("No se pudieron obtener los roles");
