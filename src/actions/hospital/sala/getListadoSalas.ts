@@ -1,5 +1,6 @@
 import { executeQuery } from "@/lib/db";
 import { RowDataPacket } from "mysql2/promise";
+import { parseMySQLDate } from "@/lib/dateUtils";
 
 export interface ListadoSalas extends RowDataPacket {
   id_sala: number;
@@ -104,7 +105,13 @@ WHERE us.usuario_id = ? AND s.hospital = ? AND s.fecha_baja IS NULL;`,
       );
     }
 
-    return rows;
+    return rows.map((sala) => {
+      const correctedDate = parseMySQLDate(sala.updateTime);
+      return {
+        ...sala,
+        updateTime: correctedDate ? new Date(correctedDate) : sala.updateTime
+      };
+    });
   } catch (error) {
     console.error("Error al obtener listado de salas:", error);
     throw new Error("No se pudieron obtener las salas");
